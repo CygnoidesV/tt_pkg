@@ -1,0 +1,64 @@
+# Distance Unit: mm
+# Time Unit: s
+
+cmd_queue_test: [[0, 0, 0], [-170, 120, 0], [-170, 1850, 0], [-1750, 1850, 0], [-1750, 150, 0], [-170, 120, 0], [0, 0, 0]]
+
+road_points:
+  - [-170, 120]
+  - [-170, 1850]
+  - [-1750, 1850]
+  - [-1750, 120]
+
+start_pose: [0, 0, 0]
+qr_code_pose: [0, 100, 0]
+material_pose: [0, 200, 0]
+rough_machining_pose: [100, 100, 90]
+
+max_time_diff: 0.5
+frame_buff: 30 
+
+pid_v: [3.0, 0.00025, 0.01] #Kp, Ki, Kd
+v_err_max: 1000.0
+v_max: 700.0
+v_min: 10.0
+position_error: 15.0
+
+PID_w: [1.0, 0.0, 0.0] #Kp, Ki, Kd
+angle_error: 5.0
+
+settings_BL:
+  exposure: -5
+  lower_green: [35, 60, 60]
+  upper_green: [92, 255, 255]
+  lower_red_1: [0, 120, 40]
+  upper_red_1: [10, 255, 255]
+  lower_red_2: [175, 50, 40]
+  upper_red_2: [180, 255, 255]
+  lower_blue: [100, 80, 90]
+  upper_blue: [130, 255, 255]
+  lower: [175, 50, 40]
+  upper: [180, 255, 255]
+  k_size: 5
+  area: 50
+  leng: 100
+  window: 10
+  limit: 3
+
+settings_PU:
+  exposure: -5
+  threshold: [200, 255]
+  lower_green: [35, 60, 60]
+  upper_green: [92, 255, 255]
+  lower_red_1: [0, 120, 40]
+  upper_red_1: [10, 255, 255]
+  lower_red_2: [175, 50, 40]
+  upper_red_2: [180, 255, 255]
+  lower_blue: [100, 80, 90]
+  upper_blue: [130, 255, 255]
+  lower: [175, 50, 40]
+  upper: [180, 255, 255]
+  k_size: 5
+  area: 50
+  leng: 100
+  window: 10
+  limit: 3
