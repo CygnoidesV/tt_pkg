@@ -3,9 +3,9 @@ import rclpy
 import cv2
 from rclpy.node import Node
 from std_msgs.msg import String
+from tt_pkg.msg import StuffInfo
 from tt_pkg.config import settings_BL
 from tt_pkg.detection import detect_QR, detect_BL
-from tt_pkg.msg import StuffInfo
 
 class Detection1(Node):
     def __init__(self):
@@ -20,7 +20,7 @@ class Detection1(Node):
         self.cap.set(6, cv2.VideoWriter.fourcc('M', 'J', 'P', 'G'))
 
         super().__init__("detection1_node")
-        self.pub1_ = self.create_publisher(String,"task_sequence", 10)
+        self.pub1_ = self.create_publisher(String, "task_sequence", 10)
         self.pub2_ = self.create_publisher(StuffInfo, "stuff_info", 10)
         self.timer_ = self.create_timer(0.04, self.timer_callback)
         self.get_logger().info("detection1_node is started successfully.")

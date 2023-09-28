@@ -2,6 +2,7 @@
 import rclpy
 import cv2
 from rclpy.node import Node
+from tt_pkg.msg import TargetInfo
 from tt_pkg.config import settings_PU
 
 class Detection2(Node):
@@ -17,6 +18,7 @@ class Detection2(Node):
         self.cap.set(6, cv2.VideoWriter.fourcc('M', 'J', 'P', 'G'))
 
         super().__init__("detection2_node")
+        self.pub1_ = self.create_publisher(TargetInfo, "target_info", 10)
         self.timer_ = self.create_timer(0.04, self.timer_callback)
         self.get_logger().info("detection2_node is started successfully.")
 

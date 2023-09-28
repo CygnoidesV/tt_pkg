@@ -15,7 +15,8 @@ material_pose: [0, 200, 0]
 rough_machining_pose: [100, 100, 90]
 
 max_time_diff: 0.5
-frame_buff: 30 
+frame_buff: 10 
+max_var: 10
 
 pid_v: [3.0, 0.00025, 0.01] #Kp, Ki, Kd
 v_err_max: 1000.0

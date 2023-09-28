@@ -2,7 +2,7 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
-from tt_pkg.msg import PositionInfo, MoveCmd, MoveGoal, ArmCmd, StuffInfo
+from tt_pkg.msg import PositionInfo, MoveCmd, MoveGoal, ArmCmd, StuffInfo, TargetInfo
 from tt_pkg.config import config
 
 ARM1_GRAP1 = b'0x01'
@@ -19,6 +19,29 @@ def get_time_diff(stamp1, stamp2):
     time_difference = abs(timestamp1 - timestamp2)
     return time_difference
 
+def check_info(info):
+    if len(info) != config.get("frame_buff"):
+        return []
+    
+    current_time = rclpy.clock.Clock().now()  # 使用ROS 2的时钟来获取当前时间
+    if get_time_diff(current_time.to_msg(), info[0].header.stamp) > config.get("max_time_diff"):
+        return []
+
+    ave_x = ave_y = 0
+    for msg in info:
+        ave_x = ave_x + msg.x_pixel / config.get("frame_buff")
+        ave_y = ave_y + msg.y_pixel / config.get("frame_buff")
+    
+    var_x = var_y = 0
+    for msg in info:
+        var_x = var_x + (msg.x_pixel - ave_x)**2 / config.get("frame_buff")
+        var_y = var_y + (msg.y_pixel - ave_y)**2 / config.get("frame_buff")
+    
+    if var_x > config.get("max_var") or var_y > config.get("max_var"):
+        return []
+
+    return [ave_x, ave_y]
+
 class Policy(Node):
     def __init__(self):
         self.task_pipeline = []
@@ -29,11 +52,13 @@ class Policy(Node):
         self.stuff_green = []
         self.stuff_blue = []
         self.position_info = PositionInfo()
+        self.target_info = []
 
         super().__init__("policy_node")
         self.sub1_ = self.create_subscription(String, "task_sequence", self.sub1_callback, 10)
         self.sub2_ = self.create_subscription(StuffInfo, "stuff_info", self.sub2_callback, 10)
-        self.sub3_ = self.create_subscription(PositionInfo, "position_info", self.sub3_callback, 10)
+        self.sub3_ = self.create_subscription(TargetInfo, "target_info", self.sub3_callback, 10)
+        self.sub4_ = self.create_subscription(PositionInfo, "position_info", self.sub4_callback, 10)
         self.pub1_ = self.create_publisher(MoveGoal, "move_goal", 10)
         self.pub2_ = self.create_publisher(MoveCmd, "move_cmd", 10)
         self.pub3_ = self.create_publisher(ArmCmd, "arm_cmd", 10)
@@ -49,12 +74,23 @@ class Policy(Node):
     def sub2_callback(self, msg):
         if msg.color == 1:
             self.stuff_red.append(msg)
+            if len(self.stuff_red) > config.get("frame_buff"):
+                self.stuff_red.pop(0)
         if msg.color == 2:
             self.stuff_green.append(msg)
+            if len(self.stuff_green) > config.get("frame_buff"):
+                self.stuff_green.pop(0)
         if msg.color == 3:
             self.stuff_blue.append(msg)
+            if len(self.stuff_blue) > config.get("frame_buff"):
+                self.stuff_blue.pop(0)
 
     def sub3_callback(self, msg):
+        self.target_info.append(msg)
+        if len(self.target_info) > config.get("frame_buff"):
+            self.target_info.pop(0)
+
+    def sub4_callback(self, msg):
         if self.position_info.stuff_num != msg.stuff_num:
             self.arm_cmd_flag = 0
         if self.position_info.stuff_num < msg.stuff_num:
@@ -64,9 +100,6 @@ class Policy(Node):
         self.position_info = msg
 
     def timer_callback(self):
-
-        self.stuff_info_update()
-
         if len(self.task_pipeline) == 0:
             return
 
@@ -92,35 +125,13 @@ class Policy(Node):
                 self.task_pipeline.pop(0)
 
             color = self.task_sequence[self.task_index]
-            if self.arm_cmd_flag == 0 and ((color == 1 and len(self.stuff_red) >= 10) or (color == 2 and len(self.stuff_green) >= 10) or (color == 3 and len(self.stuff_blue) >= 10))
+            if self.arm_cmd_flag == 0 and ((color == 1 and check_info(self.stuff_red)) or (color == 2 and check_info(self.stuff_green)) or (color == 3 and check_info(self.stuff_blue))):
                 msg = ArmCmd()
                 msg.act_id = ARM1_GRAP1
                 self.pub3_.publish(msg)
                 self.arm_cmd_flag = 1
 
-        
-    
-    def stuff_info_update(self):
-        current_time = rclpy.clock.Clock().now()  # 使用ROS 2的时钟来获取当前时间
 
-        if len(self.stuff_red) > 0:
-            while get_time_diff(current_time.to_msg(), self.stuff_red[0].header.stamp) > config.get("max_time_diff") or len(self.stuff_red) > config.get("frame_buff"):
-                print(get_time_diff(current_time.to_msg(), self.stuff_red[0].header.stamp))
-                self.stuff_red.pop(0)
-                if len(self.stuff_red) == 0:
-                    break 
-
-        if len(self.stuff_green) > 0:
-            while get_time_diff(current_time.to_msg(), self.stuff_green[0].header.stamp) > config.get("max_time_diff") or len(self.stuff_green) > config.get("frame_buff"):
-                self.stuff_green.pop(0)
-                if len(self.stuff_green) == 0:
-                    break 
-
-        if len(self.stuff_blue) > 0:
-            while get_time_diff(current_time.to_msg(), self.stuff_blue[0].header.stamp) > config.get("max_time_diff") or len(self.stuff_blue) > config.get("frame_buff"):
-                self.stuff_blue.pop(0)
-                if len(self.stuff_blue) == 0:
-                    break 
 
 def main(args = None):
     rclpy.init(args = args)
