@@ -3,7 +3,7 @@ import rclpy
 import cv2
 from rclpy.node import Node
 from std_msgs.msg import String
-from tt_pkg.msg import StuffInfo
+from tt_pkg.msg import DetectInfo
 from tt_pkg.config import settings_BL
 from tt_pkg.detection import detect_QR, detect_BL
 
@@ -21,7 +21,7 @@ class Detection1(Node):
 
         super().__init__("detection1_node")
         self.pub1_ = self.create_publisher(String, "task_sequence", 10)
-        self.pub2_ = self.create_publisher(StuffInfo, "stuff_info", 10)
+        self.pub2_ = self.create_publisher(DetectInfo, "stuff_info", 10)
         self.timer_ = self.create_timer(0.04, self.timer_callback)
         self.get_logger().info("detection1_node is started successfully.")
 
@@ -49,7 +49,7 @@ class Detection1(Node):
             # self.get_logger().info("Publishing: %s" % msg.data)
 
         if result_r[1]:
-            msg = StuffInfo()
+            msg = DetectInfo()
             msg.header.stamp = current_time.to_msg()
             msg.color = 1
             msg.x_pixel, msg.y_pixel = result_r[1]
@@ -57,7 +57,7 @@ class Detection1(Node):
             # self.get_logger().info("Publishing: Red")
 
         if result_g[1]:
-            msg = StuffInfo()
+            msg = DetectInfo()
             msg.header.stamp = current_time.to_msg()
             msg.color = 2
             msg.x_pixel, msg.y_pixel = result_g[1]
@@ -65,7 +65,7 @@ class Detection1(Node):
             # self.get_logger().info("Publishing: Green")
 
         if result_b[1]:
-            msg = StuffInfo()
+            msg = DetectInfo()
             msg.header.stamp = current_time.to_msg()
             msg.color = 3
             msg.x_pixel, msg.y_pixel = result_b[1]

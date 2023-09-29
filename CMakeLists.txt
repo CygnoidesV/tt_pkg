@@ -32,8 +32,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/MoveCmd.msg"
   "msg/MoveGoal.msg"
   "msg/ArmCmd.msg"
-  "msg/StuffInfo.msg"
-  "msg/TargetInfo.msg"
+  "msg/DetectInfo.msg"
   DEPENDENCIES std_msgs
 )
 ament_export_dependencies(rosidl_default_runtime)
