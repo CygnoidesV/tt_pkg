@@ -4,7 +4,7 @@ import rclpy
 from rclpy.node import Node
 from tt_pkg.msg import PositionInfo, MoveCmd, MoveGoal
 from tt_pkg.config import config
-from tt_pkg.PID import pid_v
+from tt_pkg.PID import pid_v, pid_w
 
 def get_distance(point1, point2):
     return math.sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2)
@@ -68,12 +68,12 @@ def get_queue(current_pose, goal_pose, roads):
         
         if dist1 < dist2:
             for i in range(len(queue1)):
-                queue1[i].append(0)
+                queue1[i].append(current_pose[2])
             queue1.append(goal_pose)
             return queue1
         else:
             for i in range(len(queue2)):
-                queue1[i].append(0)
+                queue2[i].append(current_pose[2])
             queue2.append(goal_pose)
             return queue2
 
@@ -94,7 +94,7 @@ class Tracking(Node):
         # print(config.get("road_points"), config.get("start_point"))
         self.road_points = config.get("road_points")
         self.position_info_list = []
-        self.cmd_queue = config.get("cmd_queue_test")
+        self.cmd_queue = []
 
         self.sub1_ = self.create_subscription(PositionInfo, "position_info", self.sub1_callback, 10)
         self.sub2_ = self.create_subscription(MoveGoal, "move_goal", self.sub2_callback, 10)
@@ -119,14 +119,15 @@ class Tracking(Node):
         if len(self.cmd_queue) == 0 or len(self.position_info_list) < 2:
             return
 
+        print("Cmd_queue: ", self.cmd_queue)
         vx = pid_v.update(self.cmd_queue[0][0], self.position_info_list[-1].x_abs)
         vy = pid_v.update(self.cmd_queue[0][1], self.position_info_list[-1].y_abs)
-        vw = 0.0
+        vw = pid_w.update(self.cmd_queue[0][2], self.position_info_list[-1].angle_abs)
         print("Goal: ", self.cmd_queue[0],"Position_info: ", self.position_info_list[-1].x_abs, self.position_info_list[-1].y_abs, self.position_info_list[-1].angle_abs)
-        print("V: ", vx, vy, vw)
         position_error = config.get("position_error")
+        angle_error = config.get("angle_error")
 
-        if (self.cmd_queue[0][0]-self.position_info_list[-1].x_abs)**2 < position_error**2 and (self.cmd_queue[0][1]-self.position_info_list[-1].y_abs)**2 < position_error**2 and (self.cmd_queue[0][2]-self.position_info_list[-1].angle_abs)**2 < 1000**2:
+        if (self.cmd_queue[0][0]-self.position_info_list[-1].x_abs)**2 < position_error**2 and (self.cmd_queue[0][1]-self.position_info_list[-1].y_abs)**2 < position_error**2 and (self.cmd_queue[0][2]-self.position_info_list[-1].angle_abs)**2 < angle_error**2:
             self.cmd_queue.pop(0)
             if len(self.cmd_queue) == 0:
                 msg = MoveCmd()
@@ -136,11 +137,13 @@ class Tracking(Node):
                 for i in range(10):
                     self.pub1_.publish(msg)
         else:
+            angle = self.position_info_list[-1].angle_abs * math.pi / 180
             msg = MoveCmd()
-            msg.vx = vx
-            msg.vy = vy
-            msg.vw = 0.0
+            msg.vx = vx * math.cos(angle) + vy * math.sin(angle)
+            msg.vy = vy * math.cos(angle) - vx * math.sin(angle)
+            msg.vw = vw
             self.pub1_.publish(msg)
+            print("V: ", msg.vx, msg.vy, msg.vw)
 
 
 def main(args=None):

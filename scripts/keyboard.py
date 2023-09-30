@@ -22,35 +22,21 @@ class Keyboard(Node):
 
     def timer_callback(self):
         # Reset the velocities
-        self.move_cmd_msg.vx = 0.0
-        self.move_cmd_msg.vy = 0.0
-        self.move_cmd_msg.vw = 0.0
 
         # Check if a key is pressed
         key = self.stdscr.getch()
         if key != curses.ERR:
-            if key == ord('w'):
-                self.move_cmd_msg.vy = 1000.0  # Forward motion
-                self.move_goal_msg.y_abs = self.move_goal_msg.y_abs + config.get("position_error")
-            elif key == ord('s'):
-                self.move_cmd_msg.vy = -1000.0  # Backward motion
-                self.move_goal_msg.y_abs = self.move_goal_msg.y_abs - config.get("position_error")
-
-            if key == ord('a'):
-                self.move_cmd_msg.vx = -1000.0  # Turn left
-                self.move_goal_msg.x_abs = self.move_goal_msg.x_abs - config.get("position_error")
-            elif key == ord('d'):
-                self.move_cmd_msg.vx = 1000.0  # Turn right
-                self.move_goal_msg.x_abs = self.move_goal_msg.x_abs + config.get("position_error")
-
-            if key == ord('q'):
-                self.move_cmd_msg.vw = 90.0  # Turn left
-                self.move_goal_msg.angle_abs = self.move_goal_msg.angle_abs + config.get("position_error")
-            elif key == ord('e'):
-                self.move_cmd_msg.vw = -90.0  # Turn right
-                self.move_goal_msg.angle_abs = self.move_goal_msg.angle_abs - config.get("position_error")
-
-            if key == ord('t'):
+            if key == ord('0'):
+                pose = config.get("start_pose")
+                self.move_goal_msg.x_abs, self.move_goal_msg.y_abs, self.move_goal_msg.angle_abs = pose
+                self.pub2_.publish(self.move_goal_msg)
+            if key == ord('1'):
+                pose = config.get("qr_code_pose")
+                self.move_goal_msg.x_abs, self.move_goal_msg.y_abs, self.move_goal_msg.angle_abs = pose
+                self.pub2_.publish(self.move_goal_msg)
+            if key == ord('2'):
+                pose = config.get("material_pose")
+                self.move_goal_msg.x_abs, self.move_goal_msg.y_abs, self.move_goal_msg.angle_abs = pose
                 self.pub2_.publish(self.move_goal_msg)
 
             # Publish the MoveCmd message

@@ -9,10 +9,10 @@ road_points:
   - [-1750, 1850]
   - [-1750, 120]
 
-start_pose: [0, 0, 0]
-qr_code_pose: [0, 100, 0]
-material_pose: [0, 200, 0]
-machining_pose: [100, 100, 90]
+start_pose: [0.0, 0.0, 0.0]
+qr_code_pose: [-170.0, 500.0, -90.0]
+material_pose: [-170.0, 1000.0, -90.0]
+machining_pose: [100.0, 100.0, 90]
 machining_red_pose: [100, 100, 90]
 machining_green_pose: [100, 100, 90]
 machining_blue_pose: [100, 100, 90]
@@ -28,14 +28,17 @@ frame_buff: 10
 max_var: 10
 pixel_error: 10
 
-pid_v: [3.0, 0.00025, 0.01] #Kp, Ki, Kd
+pid_v: [3.0, 0.0005, 0.005] #Kp, Ki, Kd
 v_err_max: 1000.0
 v_max: 700.0
 v_min: 10.0
 position_error: 10.0
 
-PID_w: [1.0, 0.0, 0.0] #Kp, Ki, Kd
-angle_error: 5.0
+pid_w: [30.0, 0.005, 0.05] #Kp, Ki, Kd
+w_err_max: 1000.0
+w_max: 700.0
+w_min: 10.0
+angle_error: 1.0
 
 settings_BL:
   exposure: -5
