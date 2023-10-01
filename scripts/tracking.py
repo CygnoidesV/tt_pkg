@@ -9,6 +9,15 @@ from tt_pkg.PID import pid_v, pid_w
 def get_distance(point1, point2):
     return math.sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2)
 
+def get_time_diff(stamp1, stamp2):
+    # 获取时间戳并将其转换为秒
+    timestamp1 = stamp1.sec + stamp1.nanosec / 1e9
+    timestamp2 = stamp2.sec + stamp2.nanosec / 1e9
+
+    # 计算时间差
+    time_difference = abs(timestamp1 - timestamp2)
+    return time_difference
+
 def get_index(point, queue):
     dist = 0
     index = None
@@ -122,9 +131,19 @@ class Tracking(Node):
             print("Cmd_queue: ", self.cmd_queue)
 
     def timer_callback(self):
-        if len(self.cmd_queue) == 0 or len(self.position_info_list) < 2:
+        if len(self.cmd_queue) == 0:
             return
 
+        current_time = rclpy.clock.Clock().now()  # 使用ROS 2的时钟来获取当前时间
+        if len(self.position_info_list) < 2 or get_time_diff(current_time.to_msg(), self.position_info_list[0].header.stamp) > config.get("max_time_diff"):
+            msg = MoveCmd()
+            msg.vx = 0.0
+            msg.vy = 0.0
+            msg.vw = 0.0
+            for i in range(10):
+                self.pub1_.publish(msg)
+            return
+            
         # print("Cmd_queue: ", self.cmd_queue)
         vx = pid_v.update(self.cmd_queue[0][0], self.position_info_list[-1].x_abs)
         vy = pid_v.update(self.cmd_queue[0][1], self.position_info_list[-1].y_abs)
