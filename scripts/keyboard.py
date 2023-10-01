@@ -70,6 +70,12 @@ class Keyboard(Node):
                 pose = config.get("staging_blue_pose")
                 self.move_goal_msg.x_abs, self.move_goal_msg.y_abs, self.move_goal_msg.angle_abs = pose
                 self.pub2_.publish(self.move_goal_msg)
+            if key == ord('b'):
+                self.move_cmd_msg.vx = 0.0
+                self.move_cmd_msg.vy = 0.0
+                self.move_cmd_msg.vw = 0.0
+                for i in range(10):
+                    self.pub1_.publish(msg)
 
             # Publish the MoveCmd message
         # self.pub1_.publish(self.move_cmd_msg)

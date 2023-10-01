@@ -20,7 +20,6 @@ void receive_handler(uint8_t msg_id, uint8_t *data)
         case MSG_POSITION_INFO:
             position_info = *((position_info_t *)data);
             // printf("Position_info: %f, %f, %f, %d\n", position_info.x_abs, position_info.y_abs, position_info.angle_abs, position_info.stuff_num);
-            msg->header.stamp = rclcpp::Clock().now();
             msg->x_abs = position_info.x_abs;
             msg->y_abs = position_info.y_abs;
             msg->angle_abs = position_info.angle_abs;

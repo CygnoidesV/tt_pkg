@@ -9,15 +9,6 @@ from tt_pkg.PID import pid_v, pid_w
 def get_distance(point1, point2):
     return math.sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2)
 
-def get_time_diff(stamp1, stamp2):
-    # 获取时间戳并将其转换为秒
-    timestamp1 = stamp1.sec + stamp1.nanosec / 1e9
-    timestamp2 = stamp2.sec + stamp2.nanosec / 1e9
-
-    # 计算时间差
-    time_difference = abs(timestamp1 - timestamp2)
-    return time_difference
-
 def get_index(point, queue):
     dist = 0
     index = None
@@ -31,7 +22,10 @@ def get_index(point, queue):
 
     return index
 
-def get_queue(current_pose, goal_pose, roads):
+def get_queue(current_pose, goal_pose, road_points):
+        roads = []
+        for point in road_points:
+            roads.append([point[0], point[1]])
         current_point = [current_pose[0], current_pose[1]]
         goal_point = [goal_pose[0], goal_pose[1]]
         start_index = get_index(current_point, roads)
@@ -62,8 +56,9 @@ def get_queue(current_pose, goal_pose, roads):
                 index = len(roads) - 1
             queue2.append(roads[index])
 
-        # print("Queue1: ", queue1)
-        # print("Queue2: ", queue2)
+        print("Roads: ", roads)
+        print("Queue1: ", queue1)
+        print("Queue2: ", queue2)
         dist1 = dist2 = 0
         index = 1
         while index < len(queue1):
@@ -78,12 +73,12 @@ def get_queue(current_pose, goal_pose, roads):
         if dist1 < dist2:
             for i in range(len(queue1)):
                 queue1[i].append(goal_pose[2])
-            queue1.append(goal_pose)
+            # queue1.append(goal_pose)
             return queue1
         else:
             for i in range(len(queue2)):
                 queue2[i].append(goal_pose[2])
-            queue2.append(goal_pose)
+            # queue2.append(goal_pose)
             return queue2
 
 def get_target(err):
@@ -131,19 +126,9 @@ class Tracking(Node):
             print("Cmd_queue: ", self.cmd_queue)
 
     def timer_callback(self):
-        if len(self.cmd_queue) == 0:
+        if len(self.cmd_queue) == 0 or len(self.position_info_list) < 2:
             return
 
-        current_time = rclpy.clock.Clock().now()  # 使用ROS 2的时钟来获取当前时间
-        if len(self.position_info_list) < 2 or get_time_diff(current_time.to_msg(), self.position_info_list[0].header.stamp) > config.get("max_time_diff"):
-            msg = MoveCmd()
-            msg.vx = 0.0
-            msg.vy = 0.0
-            msg.vw = 0.0
-            for i in range(10):
-                self.pub1_.publish(msg)
-            return
-            
         # print("Cmd_queue: ", self.cmd_queue)
         vx = pid_v.update(self.cmd_queue[0][0], self.position_info_list[-1].x_abs)
         vy = pid_v.update(self.cmd_queue[0][1], self.position_info_list[-1].y_abs)
@@ -152,7 +137,7 @@ class Tracking(Node):
         position_error = config.get("position_error")
         angle_error = config.get("angle_error")
 
-        if (self.cmd_queue[0][0]-self.position_info_list[-1].x_abs)**2 < position_error**2 and (self.cmd_queue[0][1]-self.position_info_list[-1].y_abs)**2 < position_error**2 and (self.cmd_queue[0][2]-self.position_info_list[-1].angle_abs)**2 < angle_error**2:
+        if get_distance([self.cmd_queue[0][0], self.cmd_queue[0][1]], [self.position_info_list[-1].x_abs, self.position_info_list[-1].y_abs]) < position_error and (self.cmd_queue[0][2]-self.position_info_list[-1].angle_abs)**2 < angle_error*1000**2:
             self.cmd_queue.pop(0)
             if len(self.cmd_queue) == 0:
                 msg = MoveCmd()
@@ -166,7 +151,7 @@ class Tracking(Node):
             msg = MoveCmd()
             msg.vx = vx * math.cos(angle) + vy * math.sin(angle)
             msg.vy = vy * math.cos(angle) - vx * math.sin(angle)
-            msg.vw = vw
+            msg.vw = 0.0
             self.pub1_.publish(msg)
             # print("V: ", msg.vx, msg.vy, msg.vw)
 
