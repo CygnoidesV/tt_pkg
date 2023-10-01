@@ -28,7 +28,7 @@ class PID:
         d_out = self.kd * (self.actual_value_last - self.actual_value)
 
         if self.err * i_out < 0:
-            i_out = 0
+            i_out = 0.1 * i_out
 
         self.output = p_out + i_out + d_out
 

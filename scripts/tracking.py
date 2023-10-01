@@ -68,12 +68,12 @@ def get_queue(current_pose, goal_pose, roads):
         
         if dist1 < dist2:
             for i in range(len(queue1)):
-                queue1[i].append(current_pose[2])
+                queue1[i].append(goal_pose[2])
             queue1.append(goal_pose)
             return queue1
         else:
             for i in range(len(queue2)):
-                queue2[i].append(current_pose[2])
+                queue2[i].append(goal_pose[2])
             queue2.append(goal_pose)
             return queue2
 
@@ -87,6 +87,12 @@ def get_target(err):
         v_target = -v_max
 
     return v_target
+
+def adjust_angle(set_value, actual_value):
+    if (set_value - actual_value) ** 2 > 180.0 ** 2:
+        return 360.0
+    else:
+        return 0.0
 
 class Tracking(Node):
     def __init__(self):
@@ -113,17 +119,17 @@ class Tracking(Node):
 
         if len(self.position_info_list) == 2:
             self.cmd_queue = get_queue([self.position_info_list[-1].x_abs, self.position_info_list[-1].y_abs, self.position_info_list[-1].angle_abs], [msg.x_abs, msg.y_abs, msg.angle_abs], self.road_points)
-            print(self.cmd_queue)
+            print("Cmd_queue: ", self.cmd_queue)
 
     def timer_callback(self):
         if len(self.cmd_queue) == 0 or len(self.position_info_list) < 2:
             return
 
-        print("Cmd_queue: ", self.cmd_queue)
+        # print("Cmd_queue: ", self.cmd_queue)
         vx = pid_v.update(self.cmd_queue[0][0], self.position_info_list[-1].x_abs)
         vy = pid_v.update(self.cmd_queue[0][1], self.position_info_list[-1].y_abs)
         vw = pid_w.update(self.cmd_queue[0][2], self.position_info_list[-1].angle_abs)
-        print("Goal: ", self.cmd_queue[0],"Position_info: ", self.position_info_list[-1].x_abs, self.position_info_list[-1].y_abs, self.position_info_list[-1].angle_abs)
+        # print("Goal: ", self.cmd_queue[0],"Position_info: ", self.position_info_list[-1].x_abs, self.position_info_list[-1].y_abs, self.position_info_list[-1].angle_abs)
         position_error = config.get("position_error")
         angle_error = config.get("angle_error")
 
@@ -143,7 +149,7 @@ class Tracking(Node):
             msg.vy = vy * math.cos(angle) - vx * math.sin(angle)
             msg.vw = vw
             self.pub1_.publish(msg)
-            print("V: ", msg.vx, msg.vy, msg.vw)
+            # print("V: ", msg.vx, msg.vy, msg.vw)
 
 
 def main(args=None):
