@@ -121,6 +121,14 @@ class Tracking(Node):
         self.timer_ = self.create_timer(0.01, self.timer_callback)
         self.get_logger().info("tracking_node is started successfully.")
 
+    def move_stop(self):
+        msg = MoveCmd()
+        msg.vx = 0.0
+        msg.vy = 0.0
+        msg.vw = 0.0
+        for i in range(10):
+            self.pub1_.publish(msg)
+
     def sub1_callback(self, msg):
         self.position_info_list.append(msg)
         if len(self.position_info_list) > 2:
@@ -153,12 +161,7 @@ class Tracking(Node):
         if get_distance([self.cmd_queue[0][0], self.cmd_queue[0][1]], [self.position_info_list[-1].x_abs, self.position_info_list[-1].y_abs]) < position_error and (self.cmd_queue[0][2]-self.position_info_list[-1].angle_abs)**2 < angle_error**2:
             self.cmd_queue.pop(0)
             if len(self.cmd_queue) == 0:
-                msg = MoveCmd()
-                msg.vx = 0.0
-                msg.vy = 0.0
-                msg.vw = 0.0
-                for i in range(10):
-                    self.pub1_.publish(msg)
+                self.move_stop()
         else:
             angle = self.position_info_list[-1].angle_abs * math.pi / 180
             msg = MoveCmd()

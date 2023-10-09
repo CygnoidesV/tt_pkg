@@ -52,9 +52,18 @@ def check_info(info):
 
 class Policy(Node):
     def __init__(self):
-        self.task_pipeline = ["ready",
-                              "wait_for_task_sequence",
-                              "arm1_grap1"]
+        self.task_pipeline = [
+            "ready",
+            "wait_for_task_sequence",
+            "arm1_grap1",
+            "arm2_place1",
+            "arm2_grap1",
+            "arm2_place2",
+            "arm1_grap1",
+            "arm2_place1",
+            "arm2_grap1",
+            "arm2_place2"
+            ]
         self.task_sequence = []
         self.task_index = 0
         self.arm_cmd_flag = 0
@@ -79,6 +88,14 @@ class Policy(Node):
         self.pub2_ = self.create_publisher(MoveCmd, "move_cmd", 10)
         self.pub3_ = self.create_publisher(ArmCmd, "arm_cmd", 10)
         self.timer_ = self.create_timer(0.04, self.timer_callback)
+
+    def move_stop(self):
+        msg = MoveCmd()
+        msg.vx = 0.0
+        msg.vy = 0.0
+        msg.vw = 0.0
+        for i in range(10):
+            self.pub1_.publish(msg)
 
     def sub1_callback(self, msg):
         if self.task_sequence:
@@ -193,6 +210,7 @@ class Policy(Node):
                 msg.vw = 0.0
                 self.pub2_.publish(msg)
             elif self.arm_cmd_flag == 0:
+                self.move_stop()
                 msg = ArmCmd()
                 msg.act_id = ARM2_PLACE1
                 self.pub3_.publish(msg)
@@ -275,6 +293,7 @@ class Policy(Node):
                 msg.vw = 0.0
                 self.pub2_.publish(msg)
             elif self.arm_cmd_flag == 0:
+                self.move_stop()
                 msg = ArmCmd()
                 if self.task_index < 3:
                     msg.act_id = ARM2_PLACE1
