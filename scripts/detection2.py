@@ -8,7 +8,7 @@ from tt_pkg.detection import detect_PU
 
 class Detection2(Node):
     def __init__(self):
-        self.cap = cv2.VideoCapture(0)
+        self.cap = cv2.VideoCapture(2)
         self.cap.set(cv2.CAP_PROP_FPS, 30)
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
@@ -27,7 +27,7 @@ class Detection2(Node):
 
         _, ori_img = self.cap.read()
         if ori_img is None:
-            self.get_logger().info("Frame is None.")
+            self.get_logger().info("Frame is None. Please make sure the camera ID is 2.")
             return
         
         result = detect_PU(ori_img)
