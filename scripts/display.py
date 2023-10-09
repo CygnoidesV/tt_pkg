@@ -6,8 +6,8 @@ import tkinter as tk
 import time
 import threading
 
-expression_list = ["(♥◠‿◠)ﾉ", "(๑•̀ㅂ•́)✧", "(ง •̀_•́)ง", "(๑•ั็ω•็ั๑)", "(*￣∇￣*)", "(｀･д･′)", "(.•˘_˘•.)", "( ′◔ ‸◔`)", "( ◔ ‸◔？)","（ﾉ′д｀）", "(つ﹏⊂)","(╥╯^╰╥)", "(╥﹏╥)"]
-
+# expression_list = ["(♥◠‿◠)ﾉ", "(๑•̀ㅂ•́)✧", "(ง •̀_•́)ง", "(๑•ั็ω•็ั๑)", "(*￣∇￣*)", "(｀･д･′)", "(.•˘_˘•.)", "( ′◔ ‸◔`)", "( ◔ ‸◔？)","（ﾉ′д｀）", "(つ﹏⊂)","(╥╯^╰╥)", "(╥﹏╥)"]
+expression_list = ["WAITING"]
 class Display(Node):
     def __init__(self):
         super().__init__("display_node")
