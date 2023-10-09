@@ -6,6 +6,7 @@ from rclpy.node import Node
 from tt_pkg.msg import MoveCmd, MoveGoal
 from tt_pkg.config import config
 
+
 class Keyboard(Node):
 
     def __init__(self, stdscr):
@@ -75,10 +76,11 @@ class Keyboard(Node):
                 self.move_cmd_msg.vy = 0.0
                 self.move_cmd_msg.vw = 0.0
                 for i in range(10):
-                    self.pub1_.publish(msg)
+                    self.pub1_.publish(self.move_cmd_msg)
 
             # Publish the MoveCmd message
         # self.pub1_.publish(self.move_cmd_msg)
+
 
 def main(stdscr):
     rclpy.init()
@@ -92,6 +94,7 @@ def main(stdscr):
     # Destroy the node explicitly
     node.destroy_node()
     rclpy.shutdown()
+
 
 if __name__ == '__main__':
     curses.wrapper(main)
