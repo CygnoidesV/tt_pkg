@@ -83,7 +83,7 @@ settings_PU:
   exposure: -6
   
   # 椭圆轮廓寻找
-  distance: 10  # 点合并的距离
+  distance: 50  # 点合并的距离
   max_count: 2  # 距离够近的点足够多，并入一起考虑
   
   threshold: [ 200, 255 ]  # 二值化上下界
@@ -93,7 +93,7 @@ settings_PU:
   k_size: 5  # 开操作卷积核大小
   
   # 轮廓检测后，筛选的轮廓面积大小和近似轮廓的长度大小限制
-  area_max: 32000
-  area_min: 600
-  ellipse_max: 160000
+  area_max: 90000
+  area_min: 1000
+  ellipse_max: 240000
   leng: 100
