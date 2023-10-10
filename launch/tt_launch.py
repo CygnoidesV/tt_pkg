@@ -8,6 +8,25 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     return LaunchDescription([
+
+        Node(
+            package='tt_pkg',
+            executable='detection1.py',
+            output='screen',
+        ),
+
+        Node(
+            package='tt_pkg',
+            executable='detection2.py',
+            output='screen',
+        ),
+
+        Node(
+            package='tt_pkg',
+            executable='display.py',
+            output='screen',
+        ),
+
         Node(
             package='tt_pkg',
             executable='communication',
@@ -18,7 +37,13 @@ def generate_launch_description():
             package='tt_pkg',
             executable='tracking.py',
             output='screen',
-        )
+        ),
+
+        Node(
+            package='tt_pkg',
+            executable='policy.py',
+            output='screen',
+        ),
 
         # Node(
         #     package='rosbridge_server',

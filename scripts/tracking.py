@@ -60,9 +60,9 @@ def get_queue(current_pose, goal_pose, road_points):
             index = len(roads) - 1
         queue2.append(roads[index])
 
-    print("Roads: ", roads)
-    print("Queue1: ", queue1)
-    print("Queue2: ", queue2)
+    # print("Roads: ", roads)
+    # print("Queue1: ", queue1)
+    # print("Queue2: ", queue2)
     dist1 = dist2 = 0
     index = 1
     while index < len(queue1):
@@ -141,7 +141,7 @@ class Tracking(Node):
         if len(self.position_info_list) == 2:
             self.cmd_queue = get_queue([self.position_info_list[-1].x_abs, self.position_info_list[-1].y_abs,
                                        self.position_info_list[-1].angle_abs], [msg.x_abs, msg.y_abs, msg.angle_abs], self.road_points)
-            print("Cmd_queue: ", self.cmd_queue)
+            # print("Cmd_queue: ", self.cmd_queue)
 
     def timer_callback(self):
         if len(self.cmd_queue) == 0 or len(self.position_info_list) < 2:

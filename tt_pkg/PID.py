@@ -49,6 +49,10 @@ class PID:
         self.calc()
         return float(self.output)
 
+c_kp, c_ki, c_kd = config.get("pid_c")
+c_err_max = config.get("c_err_max")
+c_max = config.get("c_max")
+c_min = config.get("c_min")
 
 v_kp, v_ki, v_kd = config.get("pid_v")
 v_err_max = config.get("v_err_max")
@@ -60,5 +64,6 @@ w_err_max = config.get("w_err_max")
 w_max = config.get("w_max")
 w_min = config.get("w_min")
 
+pid_c = PID(c_kp, c_ki, c_kd, c_err_max, c_max, c_min)
 pid_v = PID(v_kp, v_ki, v_kd, v_err_max, v_max, v_min)
 pid_w = PID(w_kp, w_ki, w_kd, w_err_max, w_max, w_min)

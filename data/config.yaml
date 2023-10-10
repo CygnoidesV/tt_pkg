@@ -26,10 +26,15 @@ operate_pixel: [640, 480]
 max_time_diff: 0.5
 frame_buff: 10 
 max_var: 10
+
+pid_c: [3.0, 0.0025, 0.002] #Kp, Ki, Kd]
+c_err_max: 1000
+c_max: 700
+c_vim: 10
 pixel_error: 10
 
+# pid_v: [4.0, 0.0005, 0.005] #Kp, Ki, Kd for 700 mm/s
 pid_v: [3.0, 0.0025, 0.002] #Kp, Ki, Kd
-# pid_v: [4.0, 0.0005, 0.005] #Kp, Ki, Kd for 700
 v_err_max: 1000.0
 v_max: 1500.0
 v_min: 10.0

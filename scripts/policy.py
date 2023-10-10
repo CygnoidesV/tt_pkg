@@ -5,6 +5,7 @@ from rclpy.node import Node
 from std_msgs.msg import String
 from tt_pkg.msg import PositionInfo, MoveCmd, MoveGoal, ArmCmd, DetectInfo
 from tt_pkg.config import config
+from tt_pkg.PID import pid_c
 
 ARM1_GRAP1 = b'0x01'
 ARM2_GRAP1 = b'0x02'
@@ -204,9 +205,11 @@ class Policy(Node):
 
             operate_pixel = config.get("operate_pixel")
             if get_distance(operate_pixel, target_ave) > config.get("pixel_error"):
+                vx = pid_c.update(target_ave[0], operate_pixel[0])
+                vy = pid_c.update(target_ave[1], operate_pixel[1])
                 msg = MoveCmd()
-                msg.vx = operate_pixel[0] - target_ave[0]
-                msg.vy = operate_pixel[1] - target_ave[1]
+                msg.vx = vx
+                msg.vy = -vy
                 msg.vw = 0.0
                 self.pub2_.publish(msg)
             elif self.arm_cmd_flag == 0:
@@ -287,9 +290,11 @@ class Policy(Node):
 
             operate_pixel = config.get("operate_pixel")
             if get_distance(operate_pixel, target_ave) > config.get("pixel_error"):
+                vx = pid_c.update(target_ave[0], operate_pixel[0])
+                vy = pid_c.update(target_ave[1], operate_pixel[1])
                 msg = MoveCmd()
-                msg.vx = operate_pixel[0] - target_ave[0]
-                msg.vy = operate_pixel[1] - target_ave[1]
+                msg.vx = vx
+                msg.vy = -vy
                 msg.vw = 0.0
                 self.pub2_.publish(msg)
             elif self.arm_cmd_flag == 0:
