@@ -6,17 +6,18 @@ from tt_pkg.msg import DetectInfo
 from tt_pkg.config import settings_PU
 from tt_pkg.detection import detect_PU
 
+
 class Detection2(Node):
     def __init__(self):
         self.cap = cv2.VideoCapture(2)
-        self.cap.set(cv2.CAP_PROP_FPS, 30)
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-        self.cap.set(cv2.CAP_PROP_HUE, 0)  # 固定色调
-        self.cap.set(cv2.CAP_PROP_SATURATION, 75)  # 设置饱和度
-        self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0)  # 禁用自动曝光
-        self.cap.set(cv2.CAP_PROP_EXPOSURE, settings_PU["exposure"])
-        self.cap.set(6, cv2.VideoWriter.fourcc('M', 'J', 'P', 'G'))
+        # self.cap.set(cv2.CAP_PROP_FPS, 30)
+        # self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+        # self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+        # self.cap.set(cv2.CAP_PROP_HUE, 0)  # 固定色调
+        # self.cap.set(cv2.CAP_PROP_SATURATION, 75)  # 设置饱和度
+        # self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0)  # 禁用自动曝光
+        # self.cap.set(cv2.CAP_PROP_EXPOSURE, settings_PU["exposure"])
+        # self.cap.set(6, cv2.VideoWriter.fourcc('M', 'J', 'P', 'G'))
 
         super().__init__("detection2_node")
         self.pub1_ = self.create_publisher(DetectInfo, "target_info", 10)
@@ -29,7 +30,7 @@ class Detection2(Node):
         if ori_img is None:
             self.get_logger().info("Frame is None. Please make sure the camera ID is 2.")
             return
-        
+
         result = detect_PU(ori_img)
 
         if result is not None:
@@ -41,17 +42,22 @@ class Detection2(Node):
                 msg.x_pixel, msg.y_pixel = result[i][1]
                 self.pub1_.publish(msg)
 
-        # cv2.imshow("result2", ori_img)
-        # key = cv2.waitKey(1)
-        # if key == 27:
-        #     return
+                for point in result:
+                    cv2.circle(ori_img, point[1], 2, (0, 255, 0), 2)
 
-def main(args = None):
-    rclpy.init(args = args)
+        cv2.imshow("result2", ori_img)
+        key = cv2.waitKey(1)
+        if key == 27:
+            return
+
+
+def main(args=None):
+    rclpy.init(args=args)
     node = Detection2()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
+
 
 if __name__ == "__main__":
     main()

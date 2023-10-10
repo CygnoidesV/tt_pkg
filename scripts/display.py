@@ -8,16 +8,20 @@ import threading
 
 # expression_list = ["(♥◠‿◠)ﾉ", "(๑•̀ㅂ•́)✧", "(ง •̀_•́)ง", "(๑•ั็ω•็ั๑)", "(*￣∇￣*)", "(｀･д･′)", "(.•˘_˘•.)", "( ′◔ ‸◔`)", "( ◔ ‸◔？)","（ﾉ′д｀）", "(つ﹏⊂)","(╥╯^╰╥)", "(╥﹏╥)"]
 expression_list = ["WAITING"]
+
+
 class Display(Node):
     def __init__(self):
         super().__init__("display_node")
-        self.sub1_ = self.create_subscription(String, "task_sequence", self.sub1_callback, 10)
+        self.sub1_ = self.create_subscription(
+            String, "task_sequence", self.sub1_callback, 10)
         self.get_logger().info("display_node is started successfully.")
 
         self.task_sequence = None
 
     def sub1_callback(self, msg):
         self.task_sequence = msg.data
+
 
 def gui_part(display_node):
     # 创建GUI窗口
@@ -34,7 +38,8 @@ def gui_part(display_node):
     root.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
     # 创建标签用于显示任务序列
-    label = tk.Label(root, text=expression_list[0], font=("Arial", int(window_height * 0.35)))
+    label = tk.Label(root, text=expression_list[0], font=(
+        "Arial", int(window_height * 0.3)))
     # 将标签放置在窗口中央
     label.pack(expand=True, anchor='center')
     cnt = 0
@@ -51,6 +56,7 @@ def gui_part(display_node):
         # Add a small delay to control update frequency
         time.sleep(0.1)
 
+
 def main(args=None):
     rclpy.init(args=args)
     node = Display()
@@ -60,6 +66,7 @@ def main(args=None):
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
+
 
 if __name__ == "__main__":
     main()

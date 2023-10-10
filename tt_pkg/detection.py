@@ -25,12 +25,15 @@ kf.processNoiseCov = np.array([[1, 0, 0, 0],
 # 设置测量噪声协方差矩阵
 kf.measurementNoiseCov = np.array([[1, 0],
                                    [0, 1]], np.float32) * 0.1
+
+
 def cul_dist(a, b):  # 计算两点间距
     return (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2
 
 
 def open(img):  # 开操作
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (settings_BL["k_size"], settings_BL["k_size"]))  # 定义卷积核
+    kernel = cv2.getStructuringElement(
+        cv2.MORPH_RECT, (settings_BL["k_size"], settings_BL["k_size"]))  # 定义卷积核
     open_img = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
     open_img = cv2.morphologyEx(open_img, cv2.MORPH_DILATE, kernel)  # 略膨胀
     return open_img
@@ -63,6 +66,7 @@ def cul_pos(points):  # 计算坐标点的平均值
     y_avg = int(y_sum / len(points))
     return x_avg, y_avg
 
+
 def detect_PU(img):
     # 将图片转换为灰度图
     gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -72,12 +76,14 @@ def detect_PU(img):
     blur_img = cv2.bilateralFilter(gray_img, 9, 5, 75)  # 使用双边滤波
     blur_img = cv2.addWeighted(gray_img, 1.5, blur_img, -0.5, 0)  # 叠加
     # 3. 使用 Canny 边缘检测算法检测边缘。
-    edges = cv2.Canny(blur_img, settings_PU['range'][0], settings_PU['range'][1])
+    edges = cv2.Canny(
+        blur_img, settings_PU['range'][0], settings_PU['range'][1])
     # 适当膨胀
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (9, 9))  # 定义卷积核
     dila_img = cv2.morphologyEx(edges, cv2.MORPH_DILATE, kernel)  # 膨胀
 
-    contours, _ = cv2.findContours(dila_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    contours, _ = cv2.findContours(
+        dila_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     contour = []
     centers = []
     for single in contours:
@@ -107,7 +113,8 @@ def detect_PU(img):
                 temp.append(center)
         if count >= settings_PU['max_count']:
             selected.append(temp)
-            centers = [center for center in centers if center not in temp]  # 将已经入组的点排除
+            # 将已经入组的点排除
+            centers = [center for center in centers if center not in temp]
     if len(selected) <= 3:
         final = []
         for points in selected:
@@ -116,11 +123,12 @@ def detect_PU(img):
             if analysis_result:
                 final.append(analysis_result)
         if check_distance(final, 200) and check_rgb(final) and final:  # 防止一个标靶中错判出多个点，或者误判出同种颜色
-            for point in final:
-                cv2.circle(img, point[1], 2, (0, 255, 0), 2)
+            # for point in final:
+            #     cv2.circle(img, point[1], 2, (0, 255, 0), 2)
             return final
         return None
     return None
+
 
 def calculate_rgb(img, center):
     hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)  # 转换BDR色域为HSV
@@ -162,17 +170,22 @@ def check_rgb(points):
                 return 0
     return 1
 
+
 def detect_BL(img):
     hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)  # 转换BDR色域为HSV
     # 定义截取的颜色范围
     # 截取
-    mask_img_r_part1 = cv2.inRange(hsv_img, np.array(settings_BL["lower_red_1"]), np.array(settings_BL["upper_red_1"]))  # 红色的颜色范围要单独处理
-    mask_img_r_part2 = cv2.inRange(hsv_img, np.array(settings_BL["lower_red_2"]), np.array(settings_BL["upper_red_2"]))
+    mask_img_r_part1 = cv2.inRange(hsv_img, np.array(
+        settings_BL["lower_red_1"]), np.array(settings_BL["upper_red_1"]))  # 红色的颜色范围要单独处理
+    mask_img_r_part2 = cv2.inRange(hsv_img, np.array(
+        settings_BL["lower_red_2"]), np.array(settings_BL["upper_red_2"]))
     mask_img_r = cv2.bitwise_or(mask_img_r_part1, mask_img_r_part2)
 
-    mask_img_g = cv2.inRange(hsv_img, np.array(settings_BL["lower_green"]), np.array(settings_BL["upper_green"]))
+    mask_img_g = cv2.inRange(hsv_img, np.array(
+        settings_BL["lower_green"]), np.array(settings_BL["upper_green"]))
 
-    mask_img_b = cv2.inRange(hsv_img, np.array(settings_BL["lower_blue"]), np.array(settings_BL["upper_blue"]))
+    mask_img_b = cv2.inRange(hsv_img, np.array(
+        settings_BL["lower_blue"]), np.array(settings_BL["upper_blue"]))
 
     # 进行开操作，先腐蚀后膨胀
     open_img_r = open(mask_img_r)
@@ -189,7 +202,7 @@ def detect_BL(img):
 
 
 def find_contours(img):
-    
+
     corrected_pos = []
     # 寻找轮廓
     contours, _ = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -217,7 +230,8 @@ def find_contours(img):
             # 使用卡尔曼滤波器
             for single in pos:
                 kf.predict()  # 预测
-                corrected = kf.correct(np.array([[single[0]], [single[1]]], np.float32))  # 校正
+                corrected = kf.correct(
+                    np.array([[single[0]], [single[1]]], np.float32))  # 校正
                 corrected_pos = (int(corrected[0][0]), int(corrected[1][0]))
 
             if cul_dist(pos[-2], corrected_pos) > settings_BL["limit"] ** 2:  # 坐标变动足够大才更新坐标
@@ -264,6 +278,7 @@ def cul_diff(points):
 
     return cul_k(p1, p2, p4, p3), cul_k(p1, p4, p2, p3)
 
+
 def detect_QR(img):
     # 灰度化
     gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -300,14 +315,15 @@ if __name__ == "__main__":
             a, b = cul_diff(points)
             if a <= 0.1 or b <= 0.1:  # 斜率差足够小（平行）
                 # 绘制识别框
-                cv2.drawContours(ori_img, [np.int32(points)], 0, (0, 0, 255), 2)
+                cv2.drawContours(
+                    ori_img, [np.int32(points)], 0, (0, 0, 255), 2)
                 # 绘制解码信息
                 # text_pos = cul_text_pos(points)
                 # cv2.putText(ori_img, codeinfo, text_pos, cv2.FONT_HERSHEY_SIMPLEX,
                 #            0.5,
                 #            (255, 0, 0), 1)
 
-        # result_r, result_g, result_b = detect_BL(ori_img)      
+        # result_r, result_g, result_b = detect_BL(ori_img)
         # if result_r[1]:
         #     cv2.circle(ori_img, result_r[1], 5, (0, 255, 0), 2)
 
@@ -319,8 +335,10 @@ if __name__ == "__main__":
         # print(result_r, result_g, result_b)
 
         final = detect_PU(ori_img)
-        text = 'Canny_L:{},Canny_H:{}'.format(settings_PU['range'][0], settings_PU['range'][1])
-        cv2.putText(ori_img, text, (5, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 2)
+        text = 'Canny_L:{},Canny_H:{}'.format(
+            settings_PU['range'][0], settings_PU['range'][1])
+        cv2.putText(ori_img, text, (5, 30),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 2)
         print(final)
         cv2.imshow("result", ori_img)
 

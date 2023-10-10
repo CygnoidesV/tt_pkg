@@ -10,18 +10,20 @@ road_points:
   - [-1750, 120]
 
 start_pose: [0.0, 0.0, 0.0]
-qr_code_pose: [-120.0, 665.0, 0.0]
-material_pose: [-120.0, 1450.0, 0.0]
-machining_pose: [-1075.0, 1850.0, 0.0]
-machining_red_pose: [-915.0, 1900.0, 0.0]
-machining_green_pose: [-1075.0, 1900.0, 0.0]
-machining_blue_pose: [-1245.0, 1900.0, 0.0]
+qr_code_pose: [-140.0, 565.0, 0.0]
+material_pose: [-130.0, 1360.0, 0.0]
+machining_pose: [-1070.0, 1850.0, 0.0]
+machining_red_pose: [-910.0, 1950.0, 0.0]
+machining_green_pose: [-1070.0, 1950.0, 0.0]
+machining_blue_pose: [-1230.0, 1950.0, 0.0]
 staging_pose: [-1750.0, 1050.0, 90.0]
 staging_red_pose: [-1800.0, 1200.0, 90.0]
 staging_green_pose: [-1800.0, 1050.0, 90.0]
 staging_blue_pose: [-1800.0, 875.0, 90.0]
 
-operate_pixel: [640, 480]
+operate_pixel1: [70, 480]
+operate_pixel2: [640, 480]
+operate_err: 50
 
 max_time_diff: 0.5
 frame_buff: 10 
@@ -30,15 +32,15 @@ max_var: 10
 pid_c: [3.0, 0.0025, 0.002] #Kp, Ki, Kd]
 c_err_max: 1000
 c_max: 700
-c_vim: 10
+c_min: 10
 pixel_error: 10
 
 # pid_v: [4.0, 0.0005, 0.005] #Kp, Ki, Kd for 700 mm/s
-pid_v: [3.0, 0.0025, 0.002] #Kp, Ki, Kd
+pid_v: [3.0, 0.00, 0.0] #Kp, Ki, Kd
 v_err_max: 1000.0
-v_max: 1500.0
+v_max: 1000.0
 v_min: 10.0
-position_error: 20.0
+position_error: 10.0
 
 pid_w: [15.0, 0.0, 0.0] #Kp, Ki, Kd
 w_err_max: 1000.0

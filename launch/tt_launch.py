@@ -6,6 +6,7 @@ from launch_xml.launch_description_sources import XMLLaunchDescriptionSource
 
 from launch_ros.actions import Node
 
+
 def generate_launch_description():
     return LaunchDescription([
 
@@ -21,11 +22,11 @@ def generate_launch_description():
             output='screen',
         ),
 
-        Node(
-            package='tt_pkg',
-            executable='display.py',
-            output='screen',
-        ),
+        # Node(
+        #     package='tt_pkg',
+        #     executable='display.py',
+        #     output='screen',
+        # ),
 
         Node(
             package='tt_pkg',
@@ -39,11 +40,11 @@ def generate_launch_description():
             output='screen',
         ),
 
-        Node(
-            package='tt_pkg',
-            executable='policy.py',
-            output='screen',
-        ),
+        # Node(
+        #     package='tt_pkg',
+        #     executable='policy.py',
+        #     output='screen',
+        # ),
 
         # Node(
         #     package='rosbridge_server',
