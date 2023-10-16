@@ -3,7 +3,7 @@
 import rclpy
 import curses
 from rclpy.node import Node
-from tt_pkg.msg import MoveCmd, MoveGoal, ArmCmd
+from tt_pkg.msg import MoveCmd, MoveGoal, ArmCmd, PositionInfo
 from tt_pkg.config import config
 
 ARM1_GRAP1 = 0x01
@@ -15,7 +15,10 @@ ARM2_PLACE2 = 0x04
 class Keyboard(Node):
 
     def __init__(self, stdscr):
+        self.position_info = PositionInfo()
         super().__init__('keyboard_node')
+        self.sub1_ = self.create_subscription(
+            PositionInfo, "position_info", self.sub1_callback, 10)
         self.pub1_ = self.create_publisher(MoveCmd, "move_cmd", 10)
         self.pub2_ = self.create_publisher(MoveGoal, "move_goal", 10)
         self.pub3_ = self.create_publisher(ArmCmd, "arm_cmd", 10)
@@ -26,6 +29,9 @@ class Keyboard(Node):
         # Initialize MoveCmd message
         self.move_cmd_msg = MoveCmd()
         self.move_goal_msg = MoveGoal()
+
+    def sub1_callback(self, msg):
+        self.position_info = msg
 
     def timer_callback(self):
         # Reset the velocities
@@ -83,9 +89,60 @@ class Keyboard(Node):
                 self.move_cmd_msg.vw = 0.0
                 for i in range(10):
                     self.pub1_.publish(self.move_cmd_msg)
+            if key == ord('w'):
+                msg = MoveGoal()
+                msg.x_abs = self.position_info.x_abs
+                msg.y_abs = self.position_info.y_abs + 10.0
+                msg.angle_abs = self.position_info.angle_abs
+                self.pub2_.publish(msg)
             if key == ord('a'):
+                msg = MoveGoal()
+                msg.x_abs = self.position_info.x_abs - 10.0
+                msg.y_abs = self.position_info.y_abs
+                msg.angle_abs = self.position_info.angle_abs
+                self.pub2_.publish(msg)
+            if key == ord('s'):
+                msg = MoveGoal()
+                msg.x_abs = self.position_info.x_abs
+                msg.y_abs = self.position_info.y_abs - 10.0
+                msg.angle_abs = self.position_info.angle_abs
+                self.pub2_.publish(msg)
+            if key == ord('d'):
+                msg = MoveGoal()
+                msg.x_abs = self.position_info.x_abs + 10.0
+                msg.y_abs = self.position_info.y_abs
+                msg.angle_abs = self.position_info.angle_abs
+                self.pub2_.publish(msg)
+            if key == ord('q'):
+                msg = MoveGoal()
+                msg.x_abs = self.position_info.x_abs
+                msg.y_abs = self.position_info.y_abs
+                msg.angle_abs = self.position_info.angle_abs + 90.0
+                self.pub2_.publish(msg)
+            if key == ord('e'):
+                msg = MoveGoal()
+                msg.x_abs = self.position_info.x_abs
+                msg.y_abs = self.position_info.y_abs
+                msg.angle_abs = self.position_info.angle_abs - 90.0
+                self.pub2_.publish(msg)
+            if key == ord('u'):
                 msg = ArmCmd()
                 msg.act_id = ARM1_GRAP1
+                for i in range(10):
+                    self.pub3_.publish(msg)
+            if key == ord('i'):
+                msg = ArmCmd()
+                msg.act_id = ARM2_PLACE1
+                for i in range(10):
+                    self.pub3_.publish(msg)
+            if key == ord('o'):
+                msg = ArmCmd()
+                msg.act_id = ARM2_GRAP1
+                for i in range(10):
+                    self.pub3_.publish(msg)
+            if key == ord('p'):
+                msg = ArmCmd()
+                msg.act_id = ARM2_PLACE2
                 for i in range(10):
                     self.pub3_.publish(msg)
 

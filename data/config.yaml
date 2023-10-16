@@ -12,24 +12,25 @@ road_points:
 start_pose: [0.0, 0.0, 0.0]
 qr_code_pose: [-140.0, 565.0, 0.0]
 material_pose: [-130.0, 1360.0, 0.0]
-machining_pose: [-1070.0, 1850.0, 0.0]
-machining_red_pose: [-910.0, 1950.0, 0.0]
-machining_green_pose: [-1070.0, 1950.0, 0.0]
-machining_blue_pose: [-1230.0, 1950.0, 0.0]
-staging_pose: [-1750.0, 1050.0, 90.0]
-staging_red_pose: [-1800.0, 1200.0, 90.0]
-staging_green_pose: [-1800.0, 1050.0, 90.0]
-staging_blue_pose: [-1800.0, 875.0, 90.0]
+machining_pose: [-1060.0, 1850.0, 0.0]
+machining_red_pose: [-900.0, 1925.0, 0.0]
+machining_green_pose: [-1060.0, 1925.0, 0.0]
+machining_blue_pose: [-1220.0, 1925.0, 0.0]
+staging_pose: [-1750.0, 1020.0, 90.0]
+staging_red_pose: [-1810.0, 1190.0, 90.0]
+staging_green_pose: [-1810.0, 1020.0, 90.0]
+staging_blue_pose: [-1810.0, 870.0, 90.0]
 
-operate_pixel1: [70, 480]
-operate_pixel2: [640, 480]
+operate_pixel1: [100, 480]
+operate_pixel2: [160, 120]
 operate_err: 50
 
+cmd_delay: 100
 max_time_diff: 0.5
 frame_buff: 10 
 max_var: 10
 
-pid_c: [3.0, 0.0025, 0.002] #Kp, Ki, Kd]
+pid_c: [5.0, 0.1, 0.0] #Kp, Ki, Kd]
 c_err_max: 1000
 c_max: 700
 c_min: 10
@@ -50,28 +51,28 @@ angle_error: 2.0
 
 settings_BL:
   # 摄像头参数
-  exposure: -5
+  exposure: 50
 
   # RGB上下界
-  lower_green: [ 35, 60, 60 ]
-  upper_green: [ 92, 255, 255 ]
+  lower_green: &lower_green [ 35, 75, 80 ]
+  upper_green: &upper_green [ 92, 255, 255 ]
 
-  lower_red_1: [ 0, 120, 40 ]
-  upper_red_1: [ 10, 255, 255 ]
-  lower_red_2: [ 175, 50, 40 ]
-  upper_red_2: [ 180, 255, 255 ]
+  lower_red_1: &lower_red_1 [ 0, 140, 100 ]
+  upper_red_1: &upper_red_1 [ 5, 255, 255 ]
+  lower_red_2: &lower_red_2 [ 175, 50, 40 ]
+  upper_red_2: &upper_red_2 [ 180, 255, 255 ]
 
-  lower_blue: [ 100, 80, 90 ]
-  upper_blue: [ 130, 255, 255 ]
+  lower_blue: &lower_blue [ 100, 80, 90 ]
+  upper_blue: &upper_blue [ 130, 255, 255 ]
   
   # 修改变量名以修改实时选项
-  lower: lower_red_2
-  upper: upper_red_2
+  lower: *lower_green
+  upper: *upper_green
   
   k_size: 5  # 开操作卷积核大小
   
   # 轮廓检测后，筛选的轮廓面积大小和近似轮廓的长度大小限制
-  area: 50
+  area: 5000
   leng: 100
   
   # 滤波器窗口大小
@@ -85,7 +86,7 @@ settings_PU:
   exposure: -6
   
   # 椭圆轮廓寻找
-  distance: 50  # 点合并的距离
+  distance: 35  # 点合并的距离
   max_count: 2  # 距离够近的点足够多，并入一起考虑
   
   threshold: [ 200, 255 ]  # 二值化上下界
@@ -95,7 +96,7 @@ settings_PU:
   k_size: 5  # 开操作卷积核大小
   
   # 轮廓检测后，筛选的轮廓面积大小和近似轮廓的长度大小限制
-  area_max: 90000
-  area_min: 1000
-  ellipse_max: 240000
+  area_max: 0.0977 #90000/921600
+  area_min: 0 #1000
+  ellipse_max: 0.35 #240000
   leng: 100

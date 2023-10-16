@@ -32,7 +32,7 @@ class Detection1(Node):
         # self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
         # self.cap.set(cv2.CAP_PROP_HUE, 0)  # 固定色调
         # self.cap.set(cv2.CAP_PROP_SATURATION, 75)  # 设置饱和度
-        # self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0)  # 禁用自动曝光
+        self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0)  # 禁用自动曝光
         # self.cap.set(cv2.CAP_PROP_EXPOSURE, settings_BL["exposure"])
         # self.cap.set(6, cv2.VideoWriter.fourcc('M', 'J', 'P', 'G'))
 
@@ -55,17 +55,19 @@ class Detection1(Node):
         current_time = rclpy.clock.Clock().now()  # 使用ROS 2的时钟来获取当前时间
 
         if self.task_sequence.data == "":
-            codeinfo, points, straight_qrcode = detect_QR(ori_img)
-            if codeinfo:
-                self.task_sequence.data = codeinfo
-                self.pub1_.publish(self.task_sequence)
-                a, b = cul_diff(points)
-                if a <= 0.1 or b <= 0.1:  # 斜率差足够小（平行）
-                    # 绘制识别框
-                    cv2.drawContours(
-                        ori_img, [np.int32(points)], 0, (0, 0, 255), 2)
-                # self.get_logger().info("Publishing: %s" % msg.data)
-            return
+            try:
+                codeinfo, points, straight_qrcode = detect_QR(ori_img)
+                if codeinfo:
+                    self.task_sequence.data = codeinfo
+                    self.pub1_.publish(self.task_sequence)
+                    a, b = cul_diff(points)
+                    if a <= 0.1 or b <= 0.1:  # 斜率差足够小（平行）
+                        # 绘制识别框
+                        cv2.drawContours(
+                            ori_img, [np.int32(points)], 0, (0, 0, 255), 2)
+                    # self.get_logger().info("Publishing: %s" % msg.data)
+            except:
+                pass
 
         result_r, result_g, result_b = detect_BL(ori_img)
 

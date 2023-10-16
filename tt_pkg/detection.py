@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 from tt_pkg.config import settings_BL, settings_PU
 
-
 # 创建卡尔曼滤波器
 kf = cv2.KalmanFilter(4, 2)  # 状态向量为4维，测量向量为2维
 
@@ -60,14 +59,14 @@ def cul_pos(points):  # 计算坐标点的平均值
     y_sum = 0
 
     for point in points:
-        x_sum += point[0]
-        y_sum += point[1]
+        x_sum += point[0][0]
+        y_sum += point[0][1]
     x_avg = int(x_sum / len(points))
     y_avg = int(y_sum / len(points))
     return x_avg, y_avg
 
 
-def detect_PU(img):
+def detect_PU(img, area):
     # 将图片转换为灰度图
     gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(4, 4))  # 自适应直方图均衡
@@ -79,7 +78,7 @@ def detect_PU(img):
     edges = cv2.Canny(
         blur_img, settings_PU['range'][0], settings_PU['range'][1])
     # 适当膨胀
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (9, 9))  # 定义卷积核
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))  # 定义卷积核
     dila_img = cv2.morphologyEx(edges, cv2.MORPH_DILATE, kernel)  # 膨胀
 
     contours, _ = cv2.findContours(
@@ -87,20 +86,24 @@ def detect_PU(img):
     contour = []
     centers = []
     for single in contours:
-        if (settings_PU['area_min'] <= cv2.contourArea(single) <= settings_PU['area_max'] and cv2.arcLength(single, True)
+        if (settings_PU['area_min'] <= cv2.contourArea(single) <= area*settings_PU['area_max'] and cv2.arcLength(single,
+                                                                                                                 True)
                 >= settings_PU['leng'] and len(single) >= 5):  # 画出近似椭圆至少需要5个点
             contour.append(single)
             ellipse = cv2.fitEllipse(single)  # ( 椭圆拟合
             # 椭圆面积与角度筛选
-            if 3.14 * ellipse[1][0] * ellipse[1][1] <= settings_PU['ellipse_max'] and (
+            if 3.14 * ellipse[1][0] * ellipse[1][1] <= area*settings_PU['ellipse_max'] and (
                     30 <= ellipse[2] <= 150 or 210 <= ellipse[2] <= 330):
                 center = ellipse[0]
                 center = tuple(map(int, center))
                 centers.append(center)
-                # cv.ellipse(ori_img, ellipse, (0, 255, 0), 2)
+                # cv2.ellipse(img, ellipse, (0, 255, 0), 2)
                 # cv.circle(ori_img, center, 2, (0, 255, 0), 2)
     # if contour:
-    #     cv.drawContours(ori_img, contour, -1, (0, 0, 255), 3)
+    #     cv2.drawContours(img, contour, -1, (0, 0, 255), 3)
+    #     cv2.putText(img, str(area), centers[0], cv2.FONT_HERSHEY_SIMPLEX,
+    #                 0.5,
+    #                 (255, 0, 0), 1)
 
     selected = []
     for current in centers:
@@ -118,15 +121,15 @@ def detect_PU(img):
     if len(selected) <= 3:
         final = []
         for points in selected:
-            result = cul_pos(points)
+            result = cul_pos([points])
             analysis_result = calculate_rgb(img, result)  # 判断颜色
             if analysis_result:
                 final.append(analysis_result)
-        if check_distance(final, 200) and check_rgb(final) and final:  # 防止一个标靶中错判出多个点，或者误判出同种颜色
+        # if check_distance(final, 200) and check_rgb(final) and final:  # 防止一个标靶中错判出多个点，或者误判出同种颜色
             # for point in final:
             #     cv2.circle(img, point[1], 2, (0, 255, 0), 2)
-            return final
-        return None
+        return final
+        # return None
     return None
 
 
@@ -202,10 +205,9 @@ def detect_BL(img):
 
 
 def find_contours(img):
-
     corrected_pos = []
     # 寻找轮廓
-    contours, _ = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    contours, _ = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     contour = []
     pos = []
     for single in contours:
@@ -216,7 +218,7 @@ def find_contours(img):
         max_contour = max(contour, key=cv2.contourArea)
         # approx = Approx(max_contour)  # 使用四边形进行拟合
         # center = cul_pos(approx)
-        center = cul_pos(max_contour[0])  # 计算中心点
+        center = cul_pos(max_contour)  # 计算中心点
 
         # (x, y), radius = cv.minEnclosingCircle(max_contour)  # 拟合圆
         # center1 = (int(x), int(y))

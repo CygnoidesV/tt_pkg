@@ -22,11 +22,11 @@ def generate_launch_description():
             output='screen',
         ),
 
-        # Node(
-        #     package='tt_pkg',
-        #     executable='display.py',
-        #     output='screen',
-        # ),
+        Node(
+            package='tt_pkg',
+            executable='display.py',
+            output='screen',
+        ),
 
         Node(
             package='tt_pkg',
