@@ -97,6 +97,6 @@ settings_PU:
   
   # 轮廓检测后，筛选的轮廓面积大小和近似轮廓的长度大小限制
   area_max: 0.0977 #90000/921600
-  area_min: 0 #1000
-  ellipse_max: 0.35 #240000
+  area_min: 0.0011 #1000
+  ellipse_max: 0.2713 #240000
   leng: 100

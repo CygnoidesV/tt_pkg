@@ -4,6 +4,8 @@ import cv2
 import numpy as np
 from rclpy.node import Node
 from std_msgs.msg import String
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge
 from tt_pkg.msg import DetectInfo
 from tt_pkg.config import settings_BL
 from tt_pkg.detection import detect_QR, detect_BL
@@ -27,22 +29,24 @@ def cul_diff(points):
 class Detection1(Node):
     def __init__(self):
         self.cap = cv2.VideoCapture(0)
-        # self.cap.set(cv2.CAP_PROP_FPS, 30)
-        # self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-        # self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-        # self.cap.set(cv2.CAP_PROP_HUE, 0)  # 固定色调
-        # self.cap.set(cv2.CAP_PROP_SATURATION, 75)  # 设置饱和度
+        self.cap.set(cv2.CAP_PROP_FPS, 30)
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+        self.cap.set(cv2.CAP_PROP_HUE, 0)  # 固定色调
+        self.cap.set(cv2.CAP_PROP_SATURATION, 75)  # 设置饱和度
         self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0)  # 禁用自动曝光
-        # self.cap.set(cv2.CAP_PROP_EXPOSURE, settings_BL["exposure"])
-        # self.cap.set(6, cv2.VideoWriter.fourcc('M', 'J', 'P', 'G'))
+        self.cap.set(cv2.CAP_PROP_EXPOSURE, settings_BL["exposure"])
+        self.cap.set(6, cv2.VideoWriter.fourcc('M', 'J', 'P', 'G'))
 
         self.task_sequence = String()
         self.task_sequence.data = ""
+        self.bridge = CvBridge()
 
         super().__init__("detection1_node")
         self.pub1_ = self.create_publisher(String, "task_sequence", 10)
         self.pub2_ = self.create_publisher(DetectInfo, "stuff_info", 10)
-        self.timer_ = self.create_timer(0.04, self.timer_callback)
+        self.pub3_ = self.create_publisher(Image, "detection1_image", 1)
+        self.timer_ = self.create_timer(1.0/30, self.timer_callback)
         self.get_logger().info("detection1_node is started successfully.")
 
     def timer_callback(self):
@@ -80,6 +84,9 @@ class Detection1(Node):
         # if result_b[1]:
         #     cv2.circle(ori_img, result_b[1], 5, (0, 255, 0), 2)
 
+        # ori_img = cv2.resize(ori_img, (640, 480))
+        # img_msg = self.bridge.cv2_to_imgmsg(ori_img, 'bgr8')
+        # self.pub3_.publish(img_msg)
         # cv2.imshow("result1", ori_img)
         # key = cv2.waitKey(1)
         # if key == 27:

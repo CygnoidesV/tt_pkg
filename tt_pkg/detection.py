@@ -336,12 +336,12 @@ if __name__ == "__main__":
         #     cv2.circle(ori_img, result_b[1], 5, (0, 255, 0), 2)
         # print(result_r, result_g, result_b)
 
-        final = detect_PU(ori_img)
-        text = 'Canny_L:{},Canny_H:{}'.format(
-            settings_PU['range'][0], settings_PU['range'][1])
-        cv2.putText(ori_img, text, (5, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 2)
-        print(final)
+        # final = detect_PU(ori_img)
+        # text = 'Canny_L:{},Canny_H:{}'.format(
+        #     settings_PU['range'][0], settings_PU['range'][1])
+        # cv2.putText(ori_img, text, (5, 30),
+        #             cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 2)
+        # print(final)
         cv2.imshow("result", ori_img)
 
         key = cv2.waitKey(1)
