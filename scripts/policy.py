@@ -68,7 +68,8 @@ class Policy(Node):
         ]
         self.task_sequence = []
         self.task_index = -1
-        self.arm_cmd_flag = config.get("cmd_delay")
+        self.arm_cmd_flag = 0
+        self.arm_cmd_flag_last = 0
         self.stuff_red = []
         self.stuff_green = []
         self.stuff_blue = []
@@ -141,8 +142,6 @@ class Policy(Node):
         if self.position_info.stuff_num != msg.stuff_num:
             self.arm_cmd_flag = 1
             self.task_index = self.task_index + 1
-        if self.arm_cmd_flag > 0 and self.arm_cmd_flag < config.get("cmd_delay"):
-            self.arm_cmd_flag = self.arm_cmd_flag + 1
         self.position_info = msg
 
     def timer_callback(self):
@@ -191,7 +190,7 @@ class Policy(Node):
                     "material_pose")
                 self.pub1_.publish(msg)
                 return
-            if self.arm_cmd_flag < config.get("cmd_delay"):
+            if self.arm_cmd_flag_last == 1:
                 return
             color = self.task_sequence[self.task_index]
             if color == 1:
@@ -203,7 +202,7 @@ class Policy(Node):
                     msg.act_id = ARM1_GRAP1
                     for i in range(10):
                         self.pub3_.publish(msg)
-                    self.arm_cmd_flag = 0
+                    self.arm_cmd_flag = 1
             if color == 2:
                 ave = check_info(self.stuff_green)
                 if len(ave) == 0:
@@ -213,7 +212,7 @@ class Policy(Node):
                     msg.act_id = ARM1_GRAP1
                     for i in range(10):
                         self.pub3_.publish(msg)
-                    self.arm_cmd_flag = 0
+                    self.arm_cmd_flag = 1
             if color == 3:
                 ave = check_info(self.stuff_blue)
                 if len(ave) == 0:
@@ -223,7 +222,7 @@ class Policy(Node):
                     msg.act_id = ARM1_GRAP1
                     for i in range(10):
                         self.pub3_.publish(msg)
-                    self.arm_cmd_flag = 0
+                    self.arm_cmd_flag = 1
 
         if self.task_pipeline[0] == "arm2_place1":
             if self.position_info.stuff_num == 0:
@@ -268,13 +267,13 @@ class Policy(Node):
                 msg.vy = -vy
                 msg.vw = 0.0
                 self.pub2_.publish(msg)
-            elif self.arm_cmd_flag == config.get("cmd_delay"):
+            elif self.arm_cmd_flag_last == 0:
                 self.move_stop()
                 msg = ArmCmd()
                 msg.act_id = ARM2_PLACE1
                 for i in range(10):
                     self.pub3_.publish(msg)
-                self.arm_cmd_flag = 0
+                self.arm_cmd_flag = 1
 
         if self.task_pipeline[0] == "arm2_grap1":
             if self.position_info.stuff_num == 3:
@@ -301,12 +300,12 @@ class Policy(Node):
                 msg = MoveGoal()
                 msg.x_abs, msg.y_abs, msg.angle_abs = target_position
                 self.pub1_.publish(msg)
-            elif self.arm_cmd_flag == config.get("cmd_delay"):
+            elif self.arm_cmd_flag_last == 0:
                 msg = ArmCmd()
                 msg.act_id = ARM2_PLACE1
                 for i in range(10):
                     self.pub3_.publish(msg)
-                self.arm_cmd_flag = 0
+                self.arm_cmd_flag = 1
 
         if self.task_pipeline[0] == "arm2_place2":
             if self.position_info.stuff_num == 0:
@@ -357,7 +356,7 @@ class Policy(Node):
                 msg.vy = -vy
                 msg.vw = 0.0
                 self.pub2_.publish(msg)
-            elif self.arm_cmd_flag == config.get("cmd_delay"):
+            elif self.arm_cmd_flag_last == 0:
                 self.move_stop()
                 msg = ArmCmd()
                 if self.task_index < 3:
@@ -366,7 +365,9 @@ class Policy(Node):
                     msg.act_id = ARM2_PLACE2
                 for i in range(10):
                     self.pub3_.publish(msg)
-                self.arm_cmd_flag = 0
+                self.arm_cmd_flag = 1
+        
+        self.arm_cmd_flag_last = self.arm_cmd_flag
 
 
 def main(args=None):
