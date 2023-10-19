@@ -16,23 +16,24 @@ def exp(points):
     for point in points:
         ave_x += point[0] / n
         ave_y += point[1] / n
-    ver_x = ver_y = 0
+    var_x = var_y = 0
     for point in points:
-        ver_x += ((point[0] - ave_x) ** 2) / n 
-        ver_y += ((point[1] - ave_y) ** 2) / n 
-    return [ave_x, ave_y], [ver_x, ver_y]
+        var_x += ((point[0] - ave_x) ** 2) / n 
+        var_y += ((point[1] - ave_y) ** 2) / n 
+    return [ave_x, ave_y], [var_x, var_y]
 
 class Detection1(Node):
     def __init__(self):
-        self.cap = cv2.VideoCapture(0)
-        self.cap.set(cv2.CAP_PROP_FPS, 30)
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-        self.cap.set(cv2.CAP_PROP_HUE, 0)  # 固定色调
-        self.cap.set(cv2.CAP_PROP_SATURATION, 75)  # 设置饱和度
-        self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0)  # 禁用自动曝光
-        self.cap.set(cv2.CAP_PROP_EXPOSURE, settings_BL["exposure"])
-        self.cap.set(6, cv2.VideoWriter.fourcc('M', 'J', 'P', 'G'))
+        self.cap = cv2.VideoCapture(settings_BL["camera_id"])
+        self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter.fourcc('M', 'J', 'P', 'G'))
+        self.cap.set(cv2.CAP_PROP_FPS, settings_BL["fps"])
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, settings_BL["frame_width"])
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, settings_BL["frame_height"])
+        self.cap.set(cv2.CAP_PROP_BRIGHTNESS, settings_BL["brightness"])
+        # self.cap.set(cv2.CAP_PROP_HUE, 0)  # 固定色调
+        # self.cap.set(cv2.CAP_PROP_SATURATION, 75)  # 设置饱和度
+        # self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0)  # 禁用自动曝光
+        # self.cap.set(cv2.CAP_PROP_EXPOSURE, settings_BL["exposure"])
 
         self.task_sequence = String()
         self.task_sequence.data = ""
@@ -67,6 +68,20 @@ class Detection1(Node):
                 pass
 
         result_r, result_g, result_b = detect_BL(ori_img)
+
+        # if result_r[1]:
+        #     cv2.circle(ori_img, result_r[1], 5, (0, 0, 255), 2)
+
+        # if result_g[1]:
+        #     cv2.circle(ori_img, result_g[1], 5, (0, 255, 0), 2)
+
+        # if result_b[1]:
+        #     cv2.circle(ori_img, result_b[1], 5, (255, 0, 0), 2)
+        # print(result_r, result_g, result_b)
+
+        # msg_img = self.bridge.cv2_to_imgmsg(ori_img)
+        # self.pub3_.publish(msg_img)
+
         if result_r[1]:
             self.rst_r.append(result_r[1])
         elif len(self.rst_r) > 0:
@@ -87,22 +102,24 @@ class Detection1(Node):
             self.rst_b.pop(0)
         msg = DetectInfo()
         msg.header.stamp = current_time.to_msg()
-        msg.r_f = msg.g_f = msg.b_f = 0
         if len(self.rst_r) == config.get("frame_buff"):
-            ave, ver = exp(self.rst_r)
-            if ver <= config.get("max_ver"):
+            ave, var = exp(self.rst_r)
+            if var[0] <= config.get("max_var") and var[1] <= config.get("max_var"):
                 msg.r_f = 1
-                msg.r_x, msg.r_y = ave
+                msg.r_x = int(ave[0])
+                msg.r_y = int(ave[1])
         if len(self.rst_g) == config.get("frame_buff"):
-            ave, ver = exp(self.rst_g)
-            if ver <= config.get("max_ver"):
-                msg.g_f = 1
-                msg.g_x, msg.g_y = ave
+            ave, var = exp(self.rst_g)
+            if var[0] <= config.get("max_var") and var[1] <= config.get("max_var"):
+                msg.g_f = 2
+                msg.g_x = int(ave[0])
+                msg.g_y = int(ave[1])
         if len(self.rst_b) == config.get("frame_buff"):
-            ave, ver = exp(self.rst_b)
-            if ver <= config.get("max_ver"):
-                msg.b_f = 1
-                msg.b_x, msg.b_y = ave
+            ave, var = exp(self.rst_b)
+            if var[0] <= config.get("max_var") and var[1] <= config.get("max_var"):
+                msg.b_f = 3
+                msg.b_x = int(ave[0])
+                msg.b_y = int(ave[1])
         self.pub2_.publish(msg)
 
 

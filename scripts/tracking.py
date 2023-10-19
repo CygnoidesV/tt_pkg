@@ -7,6 +7,15 @@ from tt_pkg.config import config
 from tt_pkg.PID import pid_v, pid_w
 
 
+def get_time_diff(stamp1, stamp2):
+    # 获取时间戳并将其转换为秒
+    timestamp1 = stamp1.sec + stamp1.nanosec / 1e9
+    timestamp2 = stamp2.sec + stamp2.nanosec / 1e9
+
+    # 计算时间差
+    time_difference = abs(timestamp1 - timestamp2)
+    return time_difference
+
 def get_distance(point1, point2):
     return math.sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2)
 
@@ -110,13 +119,11 @@ class Tracking(Node):
         super().__init__("tracking_node")
         # print(config.get("road_points"), config.get("start_point"))
         self.road_points = config.get("road_points")
-        self.position_info_list = []
+        self.position_info = PositionInfo()
         self.cmd_queue = []
 
-        self.sub1_ = self.create_subscription(
-            PositionInfo, "position_info", self.sub1_callback, 10)
-        self.sub2_ = self.create_subscription(
-            MoveGoal, "move_goal", self.sub2_callback, 10)
+        self.sub1_ = self.create_subscription(PositionInfo, "position_info", self.sub1_callback, 10)
+        self.sub2_ = self.create_subscription(MoveGoal, "move_goal", self.sub2_callback, 10)
         self.pub1_ = self.create_publisher(MoveCmd, "move_cmd", 10)
         self.timer_ = self.create_timer(0.01, self.timer_callback)
         self.get_logger().info("tracking_node is started successfully.")
@@ -130,40 +137,32 @@ class Tracking(Node):
             self.pub1_.publish(msg)
 
     def sub1_callback(self, msg):
-        self.position_info_list.append(msg)
-        if len(self.position_info_list) > 2:
-            self.position_info_list.pop(0)
+        self.position_info = msg
 
     def sub2_callback(self, msg):
-        if self.cmd_queue:
-            return
-
-        if len(self.position_info_list) == 2:
-            self.cmd_queue = get_queue([self.position_info_list[-1].x_abs, self.position_info_list[-1].y_abs,
-                                       self.position_info_list[-1].angle_abs], [msg.x_abs, msg.y_abs, msg.angle_abs], self.road_points)
-            # print("Cmd_queue: ", self.cmd_queue)
+        self.cmd_queue = get_queue([self.position_info.x_abs, self.position_info.y_abs,self.position_info.angle_abs], 
+                                   [msg.x_abs, msg.y_abs, msg.angle_abs], self.road_points)
+        # print("Cmd_queue: ", self.cmd_queue)
 
     def timer_callback(self):
-        if len(self.cmd_queue) == 0 or len(self.position_info_list) < 2:
+        current_time = rclpy.clock.Clock().now()  # 使用ROS 2的时钟来获取当前时间
+        if len(self.cmd_queue) == 0 or get_time_diff(current_time, self.position_info.header.stamp) > config.get("max_time_diff"):
             return
 
         # print("Cmd_queue: ", self.cmd_queue)
-        vx = pid_v.update(self.cmd_queue[0][0],
-                          self.position_info_list[-1].x_abs)
-        vy = pid_v.update(self.cmd_queue[0][1],
-                          self.position_info_list[-1].y_abs)
-        vw = pid_w.update(self.cmd_queue[0][2],
-                          self.position_info_list[-1].angle_abs)
+        vx = pid_v.update(self.cmd_queue[0][0], self.position_info.x_abs)
+        vy = pid_v.update(self.cmd_queue[0][1], self.position_info.y_abs)
+        vw = pid_w.update(self.cmd_queue[0][2], self.position_info.angle_abs)
         # print("Goal: ", self.cmd_queue[0],"Position_info: ", self.position_info_list[-1].x_abs, self.position_info_list[-1].y_abs, self.position_info_list[-1].angle_abs)
         position_error = config.get("position_error")
         angle_error = config.get("angle_error")
 
-        if get_distance([self.cmd_queue[0][0], self.cmd_queue[0][1]], [self.position_info_list[-1].x_abs, self.position_info_list[-1].y_abs]) < position_error and (self.cmd_queue[0][2]-self.position_info_list[-1].angle_abs)**2 < angle_error**2:
+        if get_distance([self.cmd_queue[0][0], self.cmd_queue[0][1]], [self.position_info.x_abs, self.position_info.y_abs]) < position_error and (self.cmd_queue[0][2]-self.position_info.angle_abs)**2 < angle_error**2:
             self.cmd_queue.pop(0)
             if len(self.cmd_queue) == 0:
                 self.move_stop()
         else:
-            angle = self.position_info_list[-1].angle_abs * math.pi / 180
+            angle = self.position_info.angle_abs * math.pi / 180
             msg = MoveCmd()
             msg.vx = vx * math.cos(angle) + vy * math.sin(angle)
             msg.vy = vy * math.cos(angle) - vx * math.sin(angle)

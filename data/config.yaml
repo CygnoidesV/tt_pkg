@@ -10,6 +10,7 @@ road_points:
   - [-1750, 120]
 
 start_pose: [0.0, 0.0, 0.0]
+start_tmp_pose: [-140.0, 0.0, 0.0]
 qr_code_pose: [-140.0, 565.0, 0.0]
 material_pose: [-130.0, 1360.0, 0.0]
 machining_pose: [-1060.0, 1850.0, 0.0]
@@ -51,7 +52,12 @@ angle_error: 2.0
 
 settings_BL:
   # 摄像头参数
-  exposure: 50
+  camera_id: 0
+  fps: 30
+  frame_width: 640
+  frame_height: 480
+  brightness: 50
+  exposure: -5
 
   # RGB上下界
   lower_green: &lower_green [ 35, 75, 80 ]
@@ -83,7 +89,7 @@ settings_BL:
 
 settings_PU:
   # 摄像头参数
-  exposure: -6
+  exposure: -5
   
   # 椭圆轮廓寻找
   distance: 35  # 点合并的距离

@@ -295,15 +295,17 @@ def detect_QR(img):
 if __name__ == "__main__":
 
     print(cv2.__version__)
-    cap = cv2.VideoCapture(0)
-    cap.set(cv2.CAP_PROP_FPS, 30)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-    cap.set(cv2.CAP_PROP_HUE, 0)  # 固定色调
-    cap.set(cv2.CAP_PROP_SATURATION, 75)  # 设置饱和度
-    cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0)  # 禁用自动曝光
-    cap.set(cv2.CAP_PROP_EXPOSURE, settings_BL["exposure"])
-    cap.set(6, cv2.VideoWriter.fourcc('M', 'J', 'P', 'G'))
+    cap = cv2.VideoCapture(settings_BL["camera_id"])
+    cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter.fourcc('M', 'J', 'P', 'G'))
+    cap.set(cv2.CAP_PROP_FPS, settings_BL["fps"])
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, settings_BL["frame_width"])
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, settings_BL["frame_height"])
+    cap.set(cv2.CAP_PROP_BRIGHTNESS, settings_BL["brightness"])
+    # cap.set(cv2.CAP_PROP_HUE, 0)  # 固定色调
+    # cap.set(cv2.CAP_PROP_SATURATION, 75)  # 设置饱和度
+    # cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0)  # 禁用自动曝光
+    # cap.set(cv2.CAP_PROP_EXPOSURE, settings_BL["exposure"])
+    print(cv2.CAP_PROP_FRAME_WIDTH, cv2.CAP_PROP_FRAME_HEIGHT)
 
     while 1:
         # Take each frame
@@ -325,16 +327,16 @@ if __name__ == "__main__":
                 #            0.5,
                 #            (255, 0, 0), 1)
 
-        # result_r, result_g, result_b = detect_BL(ori_img)
-        # if result_r[1]:
-        #     cv2.circle(ori_img, result_r[1], 5, (0, 255, 0), 2)
+        result_r, result_g, result_b = detect_BL(ori_img)
+        if result_r[1]:
+            cv2.circle(ori_img, result_r[1], 5, (0, 0, 255), 2)
 
-        # if result_g[1]:
-        #     cv2.circle(ori_img, result_g[1], 5, (0, 255, 0), 2)
+        if result_g[1]:
+            cv2.circle(ori_img, result_g[1], 5, (0, 255, 0), 2)
 
-        # if result_b[1]:
-        #     cv2.circle(ori_img, result_b[1], 5, (0, 255, 0), 2)
-        # print(result_r, result_g, result_b)
+        if result_b[1]:
+            cv2.circle(ori_img, result_b[1], 5, (255, 0, 0), 2)
+        print(result_r, result_g, result_b)
 
         # final = detect_PU(ori_img)
         # text = 'Canny_L:{},Canny_H:{}'.format(

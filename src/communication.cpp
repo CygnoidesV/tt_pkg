@@ -1,4 +1,5 @@
 #include "rclcpp/rclcpp.hpp"
+#include <rclcpp/clock.hpp>
 #include "tt_pkg/msg/arm_cmd.hpp"
 #include "tt_pkg/msg/move_cmd.hpp"
 #include "tt_pkg/msg/position_info.hpp"
@@ -14,11 +15,14 @@ rclcpp::Publisher<tt_pkg::msg::PositionInfo>::SharedPtr pub1;
 void receive_handler(uint8_t msg_id, uint8_t *data) {
   position_info_t position_info;
   auto msg = std::make_shared<tt_pkg::msg::PositionInfo>();
+  rclcpp::Clock ros_clock(RCL_ROS_TIME);
+  rclcpp::Time current_time = ros_clock.now();
   switch (msg_id) {
   case MSG_POSITION_INFO:
     position_info = *((position_info_t *)data);
     // printf("Position_info: %f, %f, %f, %d\n", position_info.x_abs,
     // position_info.y_abs, position_info.angle_abs, position_info.stuff_num);
+    msg->header.stamp = current_time;
     msg->x_abs = position_info.x_abs;
     msg->y_abs = position_info.y_abs;
     msg->angle_abs = position_info.angle_abs;
