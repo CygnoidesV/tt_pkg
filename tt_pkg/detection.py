@@ -82,7 +82,7 @@ def detect_PU(img, area):
     dila_img = cv2.morphologyEx(edges, cv2.MORPH_DILATE, kernel)  # 膨胀
 
     contours, _ = cv2.findContours(
-        dila_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+        dila_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     contour = []
     centers = []
     for single in contours:
@@ -98,12 +98,12 @@ def detect_PU(img, area):
                 center = tuple(map(int, center))
                 centers.append(center)
                 # cv2.ellipse(img, ellipse, (0, 255, 0), 2)
-                # cv.circle(ori_img, center, 2, (0, 255, 0), 2)
+                # cv2.circle(ori_img, center, 2, (0, 255, 0), 2)
     # if contour:
     #     cv2.drawContours(img, contour, -1, (0, 0, 255), 3)
-    #     cv2.putText(img, str(area), centers[0], cv2.FONT_HERSHEY_SIMPLEX,
-    #                 0.5,
-    #                 (255, 0, 0), 1)
+        # cv2.putText(img, str(area), centers[0], cv2.FONT_HERSHEY_SIMPLEX,
+        #             0.5,
+        #             (255, 0, 0), 1)
 
     selected = []
     for current in centers:
@@ -125,9 +125,10 @@ def detect_PU(img, area):
             analysis_result = calculate_rgb(img, result)  # 判断颜色
             if analysis_result:
                 final.append(analysis_result)
-        # if check_distance(final, 200) and check_rgb(final) and final:  # 防止一个标靶中错判出多个点，或者误判出同种颜色
-            # for point in final:
-            #     cv2.circle(img, point[1], 2, (0, 255, 0), 2)
+        if check_distance(final, 50) and check_rgb(final) and final:  # 防止一个标靶中错判出多个点，或者误判出同种颜色
+        # if check_rgb(final) and final:  # 防止一个标靶中错判出多个点，或者误判出同种颜色
+            for point in final:
+                cv2.circle(img, point[1], 2, (0, 255, 0), 2)
         return final
         # return None
     return None
@@ -205,11 +206,11 @@ def detect_BL(img):
 
 
 def find_contours(img):
-    corrected_pos = []
+    # corrected_pos = []
     # 寻找轮廓
-    contours, _ = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    contours, _ = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     contour = []
-    pos = []
+    # pos = []
     for single in contours:
         if cv2.contourArea(single) >= settings_BL["area"] and cv2.arcLength(single, True) >= settings_BL["leng"]:
             # hull = cv.convexHull(single)  # 凸包
@@ -219,30 +220,30 @@ def find_contours(img):
         # approx = Approx(max_contour)  # 使用四边形进行拟合
         # center = cul_pos(approx)
         center = cul_pos(max_contour)  # 计算中心点
-
+        final_pos=center
         # (x, y), radius = cv.minEnclosingCircle(max_contour)  # 拟合圆
         # center1 = (int(x), int(y))
         # radius = int(radius)
 
-        if len(pos) < settings_BL["window"]:  # 一开始暂时禁用卡尔曼滤波，防止第一个位置错位
-            final_pos = center
-            pos.append(center)
-        else:
-            pos.append(center)
-            # 使用卡尔曼滤波器
-            for single in pos:
-                kf.predict()  # 预测
-                corrected = kf.correct(
-                    np.array([[single[0]], [single[1]]], np.float32))  # 校正
-                corrected_pos = (int(corrected[0][0]), int(corrected[1][0]))
+        # if len(pos) < settings_BL["window"]:  # 一开始暂时禁用卡尔曼滤波，防止第一个位置错位
+        #     final_pos = center
+        #     pos.append(center)
+        # else:
+        #     pos.append(center)
+        #     # 使用卡尔曼滤波器
+        #     for single in pos:
+        #         kf.predict()  # 预测
+        #         corrected = kf.correct(
+        #             np.array([[single[0]], [single[1]]], np.float32))  # 校正
+        #         corrected_pos = (int(corrected[0][0]), int(corrected[1][0]))
 
-            if cul_dist(pos[-2], corrected_pos) > settings_BL["limit"] ** 2:  # 坐标变动足够大才更新坐标
-                pos[-1] = corrected_pos
-                # 控制pos数组的大小
-                pos = pos[1:]
-            else:
-                pos = pos[:-1]
-            final_pos = pos[-1]
+        #     if cul_dist(pos[-2], corrected_pos) > settings_BL["limit"] ** 2:  # 坐标变动足够大才更新坐标
+        #         pos[-1] = corrected_pos
+        #         # 控制pos数组的大小
+        #         pos = pos[1:]
+        #     else:
+        #         pos = pos[:-1]
+        #     final_pos = pos[-1]
 
         # cv.circle(ori_img, center1, radius, (0, 255, 0), 2)
         # cv.drawContours(ori_img, [approx], -1, (0, 0, 255), 3)
@@ -312,6 +313,8 @@ if __name__ == "__main__":
         _, ori_img = cap.read()
         if ori_img is None:
             continue
+        size = ori_img.shape
+        t_area = size[0] * size[1]
 
         codeinfo, points, straight_qrcode = detect_QR(ori_img)
         if codeinfo:
@@ -338,7 +341,8 @@ if __name__ == "__main__":
             cv2.circle(ori_img, result_b[1], 5, (255, 0, 0), 2)
         print(result_r, result_g, result_b)
 
-        # final = detect_PU(ori_img)
+        final = detect_PU(ori_img,t_area)
+
         # text = 'Canny_L:{},Canny_H:{}'.format(
         #     settings_PU['range'][0], settings_PU['range'][1])
         # cv2.putText(ori_img, text, (5, 30),

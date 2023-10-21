@@ -10,10 +10,13 @@
 #define MSG_MOVE_CMD 0x02
 #define MSG_ARM_CMD 0x03
 
-#define ARM1_GRAP1 0x01
-#define ARM2_GRAP1 0x02
-#define ARM2_PLACE1 0x03
-#define ARM2_PLACE2 0x04
+#define ARM_RST 0x01
+#define ARM_TO_CODE 0x02
+#define ARM_TO_STUFF 0x03
+#define ARM_GRAB_MATERIAL 0x04
+#define ARM_PLACE_GROUND 0x05
+#define ARM_GRAB_GROUND 0x06
+#define ARM_PLACE_STUFF 0x07
 
 const char TOF = 0X5A;
 

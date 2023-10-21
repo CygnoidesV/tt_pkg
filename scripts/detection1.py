@@ -38,18 +38,56 @@ class Detection1(Node):
         self.task_sequence = String()
         self.task_sequence.data = ""
         self.bridge = CvBridge()
-        self.rst_r = []
-        self.rst_g = []
-        self.rst_b = []
+        self.pop_flag = 0
+
+        self.stuff_r = []
+        self.stuff_g = []
+        self.stuff_b = []
+
+        self.target_r = []
+        self.target_g = []
+        self.target_b = []
 
         super().__init__("detection1_node")
         self.pub1_ = self.create_publisher(String, "task_sequence", 10)
         self.pub2_ = self.create_publisher(DetectInfo, "stuff_info", 10)
-        self.pub3_ = self.create_publisher(Image, "detection1_image", 1)
+        self.pub3_ = self.create_publisher(DetectInfo, "target_info", 10)
+        self.pub4_ = self.create_publisher(Image, "detection1_image", 1)
         self.timer_ = self.create_timer(1.0/30, self.timer_callback)
         self.get_logger().info("detection1_node is started successfully.")
 
     def timer_callback(self):
+        self.pop_flag ^= 1
+        if self.pop_flag:
+            if len(self.stuff_r) > 0:
+                self.stuff_r.pop(0)
+            if len(self.stuff_g) > 0:
+                self.stuff_g.pop(0)
+            if len(self.stuff_b) > 0:
+                self.stuff_b.pop(0)
+            
+            if len(self.target_r) > 0:
+                self.target_r.pop(0)
+            if len(self.target_g) > 0:
+                self.target_g.pop(0)
+            if len(self.target_b) > 0:
+                self.target_b.pop(0)
+                
+        if len(self.stuff_r) > config.get("frame_buff"):
+            self.stuff_r.pop(0)
+        if len(self.stuff_g) > config.get("frame_buff"):
+            self.stuff_g.pop(0)
+        if len(self.stuff_b) > config.get("frame_buff"):
+            self.stuff_b.pop(0)
+
+        if len(self.target_r) > config.get("frame_buff"):
+            self.target_r.pop(0)
+        if len(self.target_g) > config.get("frame_buff"):
+            self.target_g.pop(0)
+        if len(self.target_b) > config.get("frame_buff"):
+            self.target_b.pop(0)
+            
+
         _, ori_img = self.cap.read()
         if ori_img is None:
             self.get_logger().info("Frame is None.")
@@ -68,6 +106,35 @@ class Detection1(Node):
                 pass
 
         result_r, result_g, result_b = detect_BL(ori_img)
+        if result_r[1]:
+            self.stuff_r.append(result_r[1])
+        if result_g[1]:
+            self.stuff_g.append(result_g[1])
+        if result_b[1]:
+            self.stuff_b.append(result_b[1])
+
+        msg = DetectInfo()
+        msg.header.stamp = current_time.to_msg()
+        if len(self.stuff_r) >= config.get("frame_buff"):
+            ave, var = exp(self.stuff_r)
+            if var[0] <= config.get("max_var") and var[1] <= config.get("max_var"):
+                msg.r_f = 1
+                msg.r_x = int(ave[0])
+                msg.r_y = int(ave[1])
+        if len(self.stuff_g) >= config.get("frame_buff"):
+            ave, var = exp(self.stuff_g)
+            if var[0] <= config.get("max_var") and var[1] <= config.get("max_var"):
+                msg.g_f = 2
+                msg.g_x = int(ave[0])
+                msg.g_y = int(ave[1])
+        if len(self.stuff_b) >= config.get("frame_buff"):
+            ave, var = exp(self.stuff_b)
+            if var[0] <= config.get("max_var") and var[1] <= config.get("max_var"):
+                msg.b_f = 3
+                msg.b_x = int(ave[0])
+                msg.b_y = int(ave[1])
+        self.pub2_.publish(msg)
+        
 
         # if result_r[1]:
         #     cv2.circle(ori_img, result_r[1], 5, (0, 0, 255), 2)
@@ -80,47 +147,38 @@ class Detection1(Node):
         # print(result_r, result_g, result_b)
 
         # msg_img = self.bridge.cv2_to_imgmsg(ori_img)
-        # self.pub3_.publish(msg_img)
+        # self.pub4_.publish(msg_img)
 
-        if result_r[1]:
-            self.rst_r.append(result_r[1])
-        elif len(self.rst_r) > 0:
-            self.rst_r.pop(0)
-        if len(self.rst_r) > config.get("frame_buff"):
-            self.rst_r.pop(0)
-        if result_g[1]:
-            self.rst_g.append(result_g[1])
-        elif len(self.rst_g) > 0:
-            self.rst_g.pop(0)
-        if len(self.rst_g) > config.get("frame_buff"):
-            self.rst_g.pop(0)
-        if result_b[1]:
-            self.rst_b.append(result_b[1])
-        elif len(self.rst_b) > 0:
-            self.rst_b.pop(0)
-        if len(self.rst_b) > config.get("frame_buff"):
-            self.rst_b.pop(0)
+        result_tgt = detect_QR(ori_img)
+        for point in result_tgt:
+            if point[0] == 1:
+                self.tgt_r.append(point[1])
+            if point[0] == 2:
+                self.tgt_g.append(point[1])
+            if point[0] == 3:
+                self.tgt_b.append(point[1])
+
         msg = DetectInfo()
         msg.header.stamp = current_time.to_msg()
-        if len(self.rst_r) == config.get("frame_buff"):
-            ave, var = exp(self.rst_r)
+        if len(self.target_r) >= config.get("frame_buff"):
+            ave, var = exp(self.target_r)
             if var[0] <= config.get("max_var") and var[1] <= config.get("max_var"):
                 msg.r_f = 1
                 msg.r_x = int(ave[0])
                 msg.r_y = int(ave[1])
-        if len(self.rst_g) == config.get("frame_buff"):
-            ave, var = exp(self.rst_g)
+        if len(self.target_g) >= config.get("frame_buff"):
+            ave, var = exp(self.target_g)
             if var[0] <= config.get("max_var") and var[1] <= config.get("max_var"):
                 msg.g_f = 2
                 msg.g_x = int(ave[0])
                 msg.g_y = int(ave[1])
-        if len(self.rst_b) == config.get("frame_buff"):
-            ave, var = exp(self.rst_b)
+        if len(self.target_b) >= config.get("frame_buff"):
+            ave, var = exp(self.target_b)
             if var[0] <= config.get("max_var") and var[1] <= config.get("max_var"):
                 msg.b_f = 3
                 msg.b_x = int(ave[0])
                 msg.b_y = int(ave[1])
-        self.pub2_.publish(msg)
+        self.pub3_.publish(msg)
 
 
 def main(args=None):

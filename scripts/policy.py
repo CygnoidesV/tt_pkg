@@ -7,10 +7,13 @@ from tt_pkg.msg import PositionInfo, MoveCmd, MoveGoal, ArmCmd, DetectInfo
 from tt_pkg.config import config
 from tt_pkg.PID import pid_c
 
-ARM1_GRAP1 = 0x01
-ARM2_GRAP1 = 0x02
-ARM2_PLACE1 = 0x03
-ARM2_PLACE2 = 0x04
+ARM_RST = 0x01
+ARM_TO_CODE = 0x02
+ARM_TO_STUFF = 0x03
+ARM_GRAB_MATERIAL = 0x04
+ARM_PLACE_GROUND = 0x05
+ARM_GRAB_GROUND = 0x06
+ARM_PLACE_STUFF = 0x07
 
 
 def get_distance(point1, point2):
@@ -27,57 +30,31 @@ def get_time_diff(stamp1, stamp2):
     return time_difference
 
 
-def check_info(info):
-    if len(info) != config.get("frame_buff"):
-        return []
-
-    current_time = rclpy.clock.Clock().now()  # 使用ROS 2的时钟来获取当前时间
-    if get_time_diff(current_time.to_msg(), info[0].header.stamp) > config.get("max_time_diff"):
-        return []
-
-    ave_x = ave_y = 0
-    for msg in info:
-        ave_x = ave_x + msg.x_pixel / config.get("frame_buff")
-        ave_y = ave_y + msg.y_pixel / config.get("frame_buff")
-
-    var_x = var_y = 0
-    for msg in info:
-        var_x = var_x + (msg.x_pixel - ave_x)**2 / config.get("frame_buff")
-        var_y = var_y + (msg.y_pixel - ave_y)**2 / config.get("frame_buff")
-
-    if var_x > config.get("max_var") or var_y > config.get("max_var"):
-        # print("Var: ", var_x, var_y)
-        return []
-
-    return [ave_x, ave_y]
-
-
 class Policy(Node):
     def __init__(self):
         self.task_pipeline = [
             "ready",
             "wait_for_task_sequence",
-            # "arm1_grap1",
-            # "arm2_place1",
+            # "ARM_GRAP_MATERIAL",
+            # "ARM_PLACE_GROUND",
             # "arm2_grap1",
-            # "arm2_place2",
-            # "arm1_grap1",
-            # "arm2_place1",
+            # "ARM_PLACE_STUFF",
+            # "ARM_GRAP_MATERIAL",
+            # "ARM_PLACE_GROUND",
             # "arm2_grap1",
-            # "arm2_place2"
+            # "ARM_PLACE_STUFF"
         ]
         self.task_sequence = []
         self.task_index = -1
         self.arm_cmd_flag = 0
         self.arm_cmd_flag_last = 0
-        self.stuff_red = []
-        self.stuff_green = []
-        self.stuff_blue = []
+        self.stuff_info = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+        self.target_info = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
         self.position_info = PositionInfo()
         self.position_info.stuff_num = 100
-        self.target_red = []
-        self.target_green = []
-        self.target_blue = []
+
+        self.machining_poses = [config.get("machining_red_pose"), config.get("machining_green_pose"), config.get("machining_blue_pose")]
+        self.stagine_poses = [config.get("staging_red_pose"), config.get("staging_green_pose"), config.get("staging_blue_pose")]
 
         super().__init__("policy_node")
         self.sub1_ = self.create_subscription(
@@ -110,33 +87,14 @@ class Policy(Node):
             print(self.task_sequence)
 
     def sub2_callback(self, msg):
-        if msg.color == 1:
-            self.stuff_red.append(msg)
-            if len(self.stuff_red) > config.get("frame_buff"):
-                self.stuff_red.pop(0)
-        if msg.color == 2:
-            self.stuff_green.append(msg)
-            if len(self.stuff_green) > config.get("frame_buff"):
-                self.stuff_green.pop(0)
-        if msg.color == 3:
-            self.stuff_blue.append(msg)
-            if len(self.stuff_blue) > config.get("frame_buff"):
-                self.stuff_blue.pop(0)
+        self.stuff_info[0] = [msg.r_f, msg.r_x, msg.r_y]
+        self.stuff_info[1] = [msg.g_f, msg.g_x, msg.g_y]
+        self.stuff_info[2] = [msg.b_f, msg.b_x, msg.b_y]
 
     def sub3_callback(self, msg):
-        color = msg.color
-        if color == 1:
-            self.target_red.append(msg)
-            if len(self.target_red) > config.get("frame_buff"):
-                self.target_red.pop(0)
-        if color == 2:
-            self.target_green.append(msg)
-            if len(self.target_green) > config.get("frame_buff"):
-                self.target_green.pop(0)
-        if color == 3:
-            self.target_blue.append(msg)
-            if len(self.target_blue) > config.get("frame_buff"):
-                self.target_blue.pop(0)
+        self.target_info[0] = [msg.r_f, msg.r_x, msg.r_y]
+        self.target_info[1] = [msg.g_f, msg.g_x, msg.g_y]
+        self.target_info[2] = [msg.b_f, msg.b_x, msg.b_y]
 
     def sub4_callback(self, msg):
         if self.position_info.stuff_num != msg.stuff_num:
@@ -147,8 +105,9 @@ class Policy(Node):
     def timer_callback(self):
         if len(self.task_pipeline) == 0:
             return
-
         # print(self.task_pipeline)
+
+        self.arm_cmd_flag_last = self.arm_cmd_flag
 
         if self.task_pipeline[0] == "ready":
             if self.position_info.stuff_num >= 0 and self.position_info.stuff_num <= 3:
@@ -157,7 +116,15 @@ class Policy(Node):
                     "qr_code_pose")
                 self.pub1_.publish(msg)
                 print(self.task_pipeline)
-                self.task_pipeline.pop(0)
+                
+                qr_code_pose = config.get("qr_code_pose")
+                road_corner = config.get("road_points")[0]
+                if get_distance([qr_code_pose[0], qr_code_pose[1]], [self.position_info.x_abs, self.position_info.y_abs]) < get_distance([qr_code_pose[0], qr_code_pose[1]], [road_corner[0], road_corner[1]]) / 2:
+                    msg = ArmCmd()
+                    msg.act_id = ARM_TO_CODE
+                    for i in range(10):
+                        self.pub3_.publish(msg)
+                    self.task_pipeline.pop(0)
                 return
 
         if self.task_pipeline[0] == "wait_for_task_sequence":
@@ -167,10 +134,14 @@ class Policy(Node):
                     "material_pose")
                 self.pub1_.publish(msg)
                 print(self.task_pipeline)
+                msg = ArmCmd()
+                msg.act_id = ARM_TO_STUFF
+                for i in range(10):
+                    self.pub3_.publish(msg)
                 self.task_pipeline.pop(0)
                 return
 
-        if self.task_pipeline[0] == "arm1_grap1":
+        if self.task_pipeline[0] == "arm_grab_material":
             if self.position_info.stuff_num == 3:
                 msg = MoveGoal()
                 msg.x_abs, msg.y_abs, msg.angle_abs = config.get(
@@ -183,52 +154,29 @@ class Policy(Node):
 
             material_pose = config.get("material_pose")
             position_err = config.get("position_error")
-            operate_pixel1 = config.get("operate_pixel1")
             if get_distance([material_pose[0], material_pose[1]], [self.position_info.x_abs, self.position_info.y_abs]) > position_err * 2:
                 msg = MoveGoal()
-                msg.x_abs, msg.y_abs, msg.angle_abs = config.get(
-                    "material_pose")
+                msg.x_abs, msg.y_abs, msg.angle_abs = material_pose
                 self.pub1_.publish(msg)
                 return
+            
             if self.arm_cmd_flag_last == 1:
                 return
+            
+            operate_pixel1 = config.get("operate_pixel1")
+            operate_err = config.get("operate_err")
             color = self.task_sequence[self.task_index]
-            if color == 1:
-                ave = check_info(self.stuff_red)
-                if len(ave) == 0:
-                    return
-                if (ave[0] - operate_pixel1[0]) ** 2 < config.get("operate_err") ** 2:
-                    msg = ArmCmd()
-                    msg.act_id = ARM1_GRAP1
-                    for i in range(10):
-                        self.pub3_.publish(msg)
-                    self.arm_cmd_flag = 1
-            if color == 2:
-                ave = check_info(self.stuff_green)
-                if len(ave) == 0:
-                    return
-                if (ave[0] - operate_pixel1[0]) ** 2 < config.get("operate_err") ** 2:
-                    msg = ArmCmd()
-                    msg.act_id = ARM1_GRAP1
-                    for i in range(10):
-                        self.pub3_.publish(msg)
-                    self.arm_cmd_flag = 1
-            if color == 3:
-                ave = check_info(self.stuff_blue)
-                if len(ave) == 0:
-                    return
-                if (ave[0] - operate_pixel1[0]) ** 2 < config.get("operate_err") ** 2:
-                    msg = ArmCmd()
-                    msg.act_id = ARM1_GRAP1
-                    for i in range(10):
-                        self.pub3_.publish(msg)
-                    self.arm_cmd_flag = 1
+            if self.stuff_info[color - 1][0] != 0 and (self.stuff_info[color - 1][1] - operate_pixel1[0]) ** 2 < operate_err ** 2:
+                msg = ArmCmd()
+                msg.act_id = ARM_GRAB_MATERIAL
+                for i in range(10):
+                    self.pub3_.publish(msg)
+                self.arm_cmd_flag = 1
 
-        if self.task_pipeline[0] == "arm2_place1":
+        if self.task_pipeline[0] == "arm_place_machining":
             if self.position_info.stuff_num == 0:
                 msg = MoveGoal()
-                msg.x_abs, msg.y_abs, msg.angle_abs = config.get(
-                    "machining_pose")
+                msg.x_abs, msg.y_abs, msg.angle_abs = config.get("machining_pose")
                 self.pub1_.publish(msg)
                 print(self.task_pipeline)
                 self.task_pipeline.pop(0)
@@ -236,46 +184,37 @@ class Policy(Node):
                 return
 
             color = self.task_sequence[self.task_index]
-            target_position = []
-            target_ave = []
-
-            if color == 1:
-                target_position = config.get("machining_red_pose")
-                target_ave = check_info(self.target_red)
-            if color == 2:
-                target_position = config.get("machining_green_pose")
-                target_ave = check_info(self.target_green)
-            if color == 3:
-                target_position = config.get("machining_blue_pose")
-                target_ave = check_info(self.target_blue)
+            target_position = self.machining_poses[color - 1]
 
             if get_distance([target_position[0], target_position[1]], [self.position_info.x_abs, self.position_info.y_abs]) > config.get("position_error"):
                 msg = MoveGoal()
                 msg.x_abs, msg.y_abs, msg.angle_abs = target_position
                 self.pub1_.publish(msg)
                 return
-
-            if len(target_ave) == 0:
+            
+            if self.arm_cmd_flag_last == 1:
                 return
-
+            
             operate_pixel2 = config.get("operate_pixel2")
-            if get_distance(operate_pixel2, target_ave) > config.get("pixel_error"):
-                vx = pid_c.update(target_ave[0], operate_pixel2[0])
-                vy = pid_c.update(target_ave[1], operate_pixel2[1])
+            pixel_err = config.get("pixel_error")
+            if self.target_info[color - 1][0] != 0 and get_distance(operate_pixel2, [self.target_info[color - 1][1], self.target_info[color - 1][2]]) > pixel_err:
+                vx = pid_c.update(self.target_info[color - 1][1], operate_pixel2[0])
+                vy = pid_c.update(self.target_info[color - 1][2], operate_pixel2[1])
                 msg = MoveCmd()
                 msg.vx = vx
                 msg.vy = -vy
                 msg.vw = 0.0
                 self.pub2_.publish(msg)
-            elif self.arm_cmd_flag_last == 0:
+            else:
                 self.move_stop()
+                self.machining_poses[color - 1] = [self.position_info.x_abs, self.position_info.y_abs, self.position_info.angle_abs]
                 msg = ArmCmd()
-                msg.act_id = ARM2_PLACE1
+                msg.act_id = ARM_PLACE_GROUND
                 for i in range(10):
                     self.pub3_.publish(msg)
                 self.arm_cmd_flag = 1
 
-        if self.task_pipeline[0] == "arm2_grap1":
+        if self.task_pipeline[0] == "arm_grab_machining":
             if self.position_info.stuff_num == 3:
                 msg = MoveGoal()
                 msg.x_abs, msg.y_abs, msg.angle_abs = config.get(
@@ -285,29 +224,24 @@ class Policy(Node):
                 self.task_pipeline.pop(0)
                 self.task_index = self.task_index - 3
                 return
-
+            
             color = self.task_sequence[self.task_index]
-            target_position = []
-
-            if color == 1:
-                target_position = config.get("machining_red_pose")
-            if color == 2:
-                target_position = config.get("machining_green_pose")
-            if color == 3:
-                target_position = config.get("machining_blue_pose")
+            target_position = self.machining_poses[color - 1]
 
             if get_distance([target_position[0], target_position[1]], [self.position_info.x_abs, self.position_info.y_abs]) > config.get("position_error"):
                 msg = MoveGoal()
                 msg.x_abs, msg.y_abs, msg.angle_abs = target_position
                 self.pub1_.publish(msg)
-            elif self.arm_cmd_flag_last == 0:
+                return
+            
+            if self.arm_cmd_flag_last == 0:
                 msg = ArmCmd()
-                msg.act_id = ARM2_PLACE1
+                msg.act_id = ARM_GRAB_GROUND
                 for i in range(10):
                     self.pub3_.publish(msg)
                 self.arm_cmd_flag = 1
 
-        if self.task_pipeline[0] == "arm2_place2":
+        if self.task_pipeline[0] == "arm_place_staging":
             if self.position_info.stuff_num == 0:
                 msg = MoveGoal()
                 if self.task_index == 3:
@@ -318,6 +252,10 @@ class Policy(Node):
                     msg.x_abs, msg.y_abs, msg.angle_abs = config.get(
                         "start_pose")
                     self.task_index == self.task_index - 3
+                    msg_arm = ArmCmd()
+                    msg_arm = ARM_RST
+                    for i in range(10):
+                        self.pub3_.publish(msg_arm)
                 self.pub1_.publish(msg)
                 print(self.task_pipeline)
                 self.task_pipeline.pop(0)
@@ -325,18 +263,7 @@ class Policy(Node):
                 return
 
             color = self.task_sequence[self.task_index]
-            target_position = []
-            target_ave = []
-
-            if color == 1:
-                target_position = config.get("staging_red_pose")
-                target_ave = check_info(self.target_red)
-            if color == 2:
-                target_position = config.get("staging_green_pose")
-                target_ave = check_info(self.target_green)
-            if color == 3:
-                target_position = config.get("staging_blue_pose")
-                target_ave = check_info(self.target_blue)
+            target_position = self.stagine_poses[color - 1]
 
             if get_distance([target_position[0], target_position[1]], [self.position_info.x_abs, self.position_info.y_abs]) > config.get("position_error"):
                 msg = MoveGoal()
@@ -344,30 +271,30 @@ class Policy(Node):
                 self.pub1_.publish(msg)
                 return
 
-            if len(target_ave) == 0:
-                return
-
-            operate_pixel2 = config.get("operate_pixel2")
-            if get_distance(operate_pixel2, target_ave) > config.get("pixel_error"):
-                vx = pid_c.update(target_ave[0], operate_pixel2[0])
-                vy = pid_c.update(target_ave[1], operate_pixel2[1])
-                msg = MoveCmd()
-                msg.vx = vx
-                msg.vy = -vy
-                msg.vw = 0.0
-                self.pub2_.publish(msg)
-            elif self.arm_cmd_flag_last == 0:
+            if self.task_index < 3:
+                operate_pixel2 = config.get("operate_pixel2")
+                pixel_err = config.get("pixel_error")
+                if self.target_info[color - 1][0] != 0 and get_distance(operate_pixel2, [self.target_info[color - 1][1], self.target_info[color - 1][2]]) > pixel_err:
+                    vx = pid_c.update(self.target_info[color - 1][1], operate_pixel2[0])
+                    vy = pid_c.update(self.target_info[color - 1][2], operate_pixel2[1])
+                    msg = MoveCmd()
+                    msg.vx = vx
+                    msg.vy = -vy
+                    msg.vw = 0.0
+                    self.pub2_.publish(msg)
+                    return
+                
+            if self.arm_cmd_flag_last == 0:
                 self.move_stop()
                 msg = ArmCmd()
                 if self.task_index < 3:
-                    msg.act_id = ARM2_PLACE1
+                    self.stagine_poses[color - 1] = [self.position_info.x_abs, self.position_info.y_abs, self.position_info.angle_abs]
+                    msg.act_id = ARM_PLACE_GROUND
                 else:
-                    msg.act_id = ARM2_PLACE2
+                    msg.act_id = ARM_PLACE_STUFF
                 for i in range(10):
                     self.pub3_.publish(msg)
                 self.arm_cmd_flag = 1
-        
-        self.arm_cmd_flag_last = self.arm_cmd_flag
 
 
 def main(args=None):

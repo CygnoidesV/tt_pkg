@@ -140,6 +140,8 @@ class Tracking(Node):
         self.position_info = msg
 
     def sub2_callback(self, msg):
+        if len(self.cmd_queue) != 0:
+            return
         self.cmd_queue = get_queue([self.position_info.x_abs, self.position_info.y_abs,self.position_info.angle_abs], 
                                    [msg.x_abs, msg.y_abs, msg.angle_abs], self.road_points)
         # print("Cmd_queue: ", self.cmd_queue)
