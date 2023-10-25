@@ -86,12 +86,18 @@ def get_queue(current_pose, goal_pose, road_points):
     if dist1 < dist2:
         for i in range(len(queue1)):
             queue1[i].append(goal_pose[2])
-        # queue1.append(goal_pose)
+        if len(queue1) > 2:
+            queue1[0][2] = current_pose[2]
+            tmp = [queue1[1][0], queue1[1][1], current_pose[2]]
+            queue1.insert(1, tmp)
         return queue1
     else:
         for i in range(len(queue2)):
             queue2[i].append(goal_pose[2])
-        # queue2.append(goal_pose)
+        if len(queue2) > 2:
+            queue2[0][2] = current_pose[2]
+            tmp = [queue2[1][0], queue2[1][1], current_pose[2]]
+            queue2.insert(1, tmp)
         return queue2
 
 
@@ -120,6 +126,7 @@ class Tracking(Node):
         # print(config.get("road_points"), config.get("start_point"))
         self.road_points = config.get("road_points")
         self.position_info = PositionInfo()
+        self.position_info_last = PositionInfo()
         self.cmd_queue = []
 
         self.sub1_ = self.create_subscription(PositionInfo, "position_info", self.sub1_callback, 10)
@@ -137,38 +144,41 @@ class Tracking(Node):
             self.pub1_.publish(msg)
 
     def sub1_callback(self, msg):
+        self.position_info_last = self.position_info
         self.position_info = msg
 
     def sub2_callback(self, msg):
-        if len(self.cmd_queue) != 0:
-            return
+        # if len(self.cmd_queue) != 0:
+        #     return
         self.cmd_queue = get_queue([self.position_info.x_abs, self.position_info.y_abs,self.position_info.angle_abs], 
                                    [msg.x_abs, msg.y_abs, msg.angle_abs], self.road_points)
-        # print("Cmd_queue: ", self.cmd_queue)
+        print("Cmd_queue: ", self.cmd_queue)
 
     def timer_callback(self):
         current_time = rclpy.clock.Clock().now()  # 使用ROS 2的时钟来获取当前时间
-        if len(self.cmd_queue) == 0 or get_time_diff(current_time, self.position_info.header.stamp) > config.get("max_time_diff"):
+        if len(self.cmd_queue) == 0 or get_time_diff(current_time.to_msg(), self.position_info.header.stamp) > config.get("max_time_diff"):
             return
 
         # print("Cmd_queue: ", self.cmd_queue)
-        vx = pid_v.update(self.cmd_queue[0][0], self.position_info.x_abs)
-        vy = pid_v.update(self.cmd_queue[0][1], self.position_info.y_abs)
-        vw = pid_w.update(self.cmd_queue[0][2], self.position_info.angle_abs)
-        # print("Goal: ", self.cmd_queue[0],"Position_info: ", self.position_info_list[-1].x_abs, self.position_info_list[-1].y_abs, self.position_info_list[-1].angle_abs)
+        vx = self.cmd_queue[0][0]
+        vy = self.cmd_queue[0][1] 
+        # vx = pid_a.update(self.position_info.x_abs - self.position_info_last.x_abs, vx_tmp)
+        # vy = pid_a.update(self.position_info.y_abs - self.position_info_last.y_abs, vy_tmp)
+        vw = self.cmd_queue[0][2]
+        
+        print("Goal: ", self.cmd_queue[0],"\nPosition_info: ", self.position_info.x_abs, self.position_info.y_abs, self.position_info.angle_abs)
         position_error = config.get("position_error")
         angle_error = config.get("angle_error")
 
-        if get_distance([self.cmd_queue[0][0], self.cmd_queue[0][1]], [self.position_info.x_abs, self.position_info.y_abs]) < position_error and (self.cmd_queue[0][2]-self.position_info.angle_abs)**2 < angle_error**2:
+        if get_distance([self.cmd_queue[0][0], self.cmd_queue[0][1]], [self.position_info.x_abs, self.position_info.y_abs]) < position_error and abs(abs(self.cmd_queue[0][2])-abs(self.position_info.angle_abs)) < angle_error:
             self.cmd_queue.pop(0)
-            if len(self.cmd_queue) == 0:
-                self.move_stop()
+            # if len(self.cmd_queue) == 0:
+            #     self.move_stop()
         else:
-            angle = self.position_info.angle_abs * math.pi / 180
             msg = MoveCmd()
-            msg.vx = vx * math.cos(angle) + vy * math.sin(angle)
-            msg.vy = vy * math.cos(angle) - vx * math.sin(angle)
-            msg.vw = vw
+            msg.vx = float(vx)
+            msg.vy = float(vy)
+            msg.vw = float(vw)
             self.pub1_.publish(msg)
             # print("V: ", msg.vx, msg.vy, msg.vw)
 

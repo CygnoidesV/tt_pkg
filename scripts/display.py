@@ -7,7 +7,7 @@ import time
 import threading
 
 # expression_list = ["(♥◠‿◠)ﾉ", "(๑•̀ㅂ•́)✧", "(ง •̀_•́)ง", "(๑•ั็ω•็ั๑)", "(*￣∇￣*)", "(｀･д･′)", "(.•˘_˘•.)", "( ′◔ ‸◔`)", "( ◔ ‸◔？)","（ﾉ′д｀）", "(つ﹏⊂)","(╥╯^╰╥)", "(╥﹏╥)"]
-expression_list = ["123+321"]
+expression_list = ["WORKING"]
 
 
 class Display(Node):

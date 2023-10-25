@@ -11,6 +11,7 @@ class PID:
         self.kd = kd
         self.integral = 0.0
         self.output = 0.0
+        self.output_last = 0.0
         self.err_max = err_max
         self.output_max = output_max
         self.output_min = output_min
@@ -32,6 +33,9 @@ class PID:
 
         self.output = p_out + i_out + d_out
 
+        # if self.output - self.output_last > self.output_max / 2:
+        #     self.output = self.output_last + self.output_max / 2
+
         if self.output ** 2 > self.output_max ** 2:
             if self.output > 0:
                 self.output = self.output_max
@@ -42,6 +46,7 @@ class PID:
 
         self.actual_value_last = self.actual_value
         self.integral = self.integral + self.err
+        self.output_last = self.output
 
     def update(self, set_value, actual_value):
         self.set_value = set_value

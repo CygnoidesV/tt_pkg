@@ -7,18 +7,27 @@ from tt_pkg.config import settings_PU
 from tt_pkg.config import config
 from tt_pkg.detection import detect_PU
 
+from tt_pkg.config import config, settings_BL
+
 
 class Detection2(Node):
     def __init__(self):
-        self.cap = cv2.VideoCapture(2)
+        # self.cap = cv2.VideoCapture(2)
         # self.cap.set(cv2.CAP_PROP_FPS, 30)
         # self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         # self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
         # self.cap.set(cv2.CAP_PROP_HUE, 0)  # 固定色调
         # self.cap.set(cv2.CAP_PROP_SATURATION, 80)  # 设置饱和度
-        self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0)  # 禁用自动曝光
+        # self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0)  # 禁用自动曝光
         # self.cap.set(cv2.CAP_PROP_EXPOSURE, settings_PU["exposure"])
         # self.cap.set(6, cv2.VideoWriter.fourcc('M', 'J', 'P', 'G'))
+
+        self.cap = cv2.VideoCapture(settings_BL["camera_id"])
+        self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter.fourcc('M', 'J', 'P', 'G'))
+        self.cap.set(cv2.CAP_PROP_FPS, settings_BL["fps"])
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, settings_BL["frame_width"])
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, settings_BL["frame_height"])
+        self.cap.set(cv2.CAP_PROP_BRIGHTNESS, settings_BL["brightness"])
 
         super().__init__("detection2_node")
         self.pub1_ = self.create_publisher(DetectInfo, "target_info", 10)

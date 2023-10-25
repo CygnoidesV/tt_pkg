@@ -2,14 +2,18 @@
 
 import rclpy
 import curses
+import math
 from rclpy.node import Node
-from tt_pkg.msg import MoveCmd, MoveGoal, ArmCmd, PositionInfo
+from tt_pkg.msg import MoveCmd, MoveGoal, ArmCmd, PositionInfo, DetectInfo
 from tt_pkg.config import config
 
-ARM1_GRAP1 = 0x01
-ARM2_GRAP1 = 0x02
-ARM2_PLACE1 = 0x03
-ARM2_PLACE2 = 0x04
+ARM_RST = 0x01
+ARM_TO_CODE = 0x02
+ARM_TO_STUFF = 0x03
+ARM_GRAB_MATERIAL = 0x04
+ARM_PLACE_GROUND = 0x05
+ARM_GRAB_GROUND = 0x06
+ARM_PLACE_STUFF = 0x07
 
 
 class Keyboard(Node):
@@ -19,19 +23,37 @@ class Keyboard(Node):
         super().__init__('keyboard_node')
         self.sub1_ = self.create_subscription(
             PositionInfo, "position_info", self.sub1_callback, 10)
+        self.sub2_ = self.create_subscription(
+            DetectInfo, "target_info", self.sub2_callback, 10)
         self.pub1_ = self.create_publisher(MoveCmd, "move_cmd", 10)
         self.pub2_ = self.create_publisher(MoveGoal, "move_goal", 10)
         self.pub3_ = self.create_publisher(ArmCmd, "arm_cmd", 10)
         self.timer_ = self.create_timer(0.04, self.timer_callback)
+        
+        self.target_info = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
         self.cnt = 0
         self.stdscr = stdscr
-
-        # Initialize MoveCmd message
-        self.move_cmd_msg = MoveCmd()
         self.move_goal_msg = MoveGoal()
+
+    def reach_target(self, color, k):
+        if self.target_info[color - 1][0] == 0:
+            return
+        operate_pixel2 = config.get("operate_pixel2")
+        p_err = [k * (self.target_info[color - 1][1] - operate_pixel2[0]), k * (self.target_info[color - 1][2] - operate_pixel2[1])]
+        angle = self.position_info.angle_abs * math.pi / 180
+        msg = MoveCmd()
+        msg.vx = self.position_info.x_abs - p_err[0] * math.cos(angle) - p_err[1] * math.sin(angle)
+        msg.vy = self.position_info.y_abs - p_err[0] * math.sin(angle) + p_err[1] * math.cos(angle)
+        msg.vw = self.position_info.angle_abs
+        self.pub1_.publish(msg)
 
     def sub1_callback(self, msg):
         self.position_info = msg
+
+    def sub2_callback(self, msg):
+        self.target_info[0] = [msg.r_f, msg.r_x, msg.r_y]
+        self.target_info[1] = [msg.g_f, msg.g_x, msg.g_y]
+        self.target_info[2] = [msg.b_f, msg.b_x, msg.b_y]
 
     def timer_callback(self):
         # Reset the velocities
@@ -39,7 +61,11 @@ class Keyboard(Node):
         # Check if a key is pressed
         key = self.stdscr.getch()
         if key != curses.ERR:
-            if key == ord('0'):
+            if key == ord('='):
+                pose = config.get("end_pose")
+                self.move_goal_msg.x_abs, self.move_goal_msg.y_abs, self.move_goal_msg.angle_abs = pose
+                self.pub2_.publish(self.move_goal_msg)
+            if key == ord('-'):
                 pose = config.get("start_pose")
                 self.move_goal_msg.x_abs, self.move_goal_msg.y_abs, self.move_goal_msg.angle_abs = pose
                 self.pub2_.publish(self.move_goal_msg)
@@ -79,72 +105,89 @@ class Keyboard(Node):
                 pose = config.get("staging_green_pose")
                 self.move_goal_msg.x_abs, self.move_goal_msg.y_abs, self.move_goal_msg.angle_abs = pose
                 self.pub2_.publish(self.move_goal_msg)
-            if key == ord('-'):
+            if key == ord('0'):
                 pose = config.get("staging_blue_pose")
                 self.move_goal_msg.x_abs, self.move_goal_msg.y_abs, self.move_goal_msg.angle_abs = pose
                 self.pub2_.publish(self.move_goal_msg)
-            if key == ord('b'):
-                self.move_cmd_msg.vx = 0.0
-                self.move_cmd_msg.vy = 0.0
-                self.move_cmd_msg.vw = 0.0
-                for i in range(10):
-                    self.pub1_.publish(self.move_cmd_msg)
+            if key == ord(' '):
+                msg = MoveCmd()
+                msg.vx = 0.0
+                msg.vy = 0.0
+                msg.vw = 0.0
+                self.pub1_.publish(msg)
             if key == ord('w'):
-                msg = MoveGoal()
-                msg.x_abs = self.position_info.x_abs
-                msg.y_abs = self.position_info.y_abs + 10.0
-                msg.angle_abs = self.position_info.angle_abs
-                self.pub2_.publish(msg)
+                msg = MoveCmd()
+                msg.vx = 0.0
+                msg.vy = -100.0
+                msg.vw = 0.0
+                self.pub1_.publish(msg)
             if key == ord('a'):
-                msg = MoveGoal()
-                msg.x_abs = self.position_info.x_abs - 10.0
-                msg.y_abs = self.position_info.y_abs
-                msg.angle_abs = self.position_info.angle_abs
-                self.pub2_.publish(msg)
+                msg = MoveCmd()
+                msg.vx = 100.0
+                msg.vy = 0.0
+                msg.vw = 0.0
+                self.pub1_.publish(msg)
             if key == ord('s'):
-                msg = MoveGoal()
-                msg.x_abs = self.position_info.x_abs
-                msg.y_abs = self.position_info.y_abs - 10.0
-                msg.angle_abs = self.position_info.angle_abs
-                self.pub2_.publish(msg)
+                msg = MoveCmd()
+                msg.vx = 0.0
+                msg.vy = 100.0
+                msg.vw = 0.0
+                self.pub1_.publish(msg)
             if key == ord('d'):
-                msg = MoveGoal()
-                msg.x_abs = self.position_info.x_abs + 10.0
-                msg.y_abs = self.position_info.y_abs
-                msg.angle_abs = self.position_info.angle_abs
-                self.pub2_.publish(msg)
+                msg = MoveCmd()
+                msg.vx = -100.0
+                msg.vy = 0.0
+                msg.vw = 0.0
+                self.pub1_.publish(msg)
             if key == ord('q'):
-                msg = MoveGoal()
-                msg.x_abs = self.position_info.x_abs
-                msg.y_abs = self.position_info.y_abs
-                msg.angle_abs = self.position_info.angle_abs + 90.0
-                self.pub2_.publish(msg)
+                msg = MoveCmd()
+                msg.vx = 0.0
+                msg.vy = 0.0
+                msg.vw = 100.0
+                self.pub1_.publish(msg)
             if key == ord('e'):
-                msg = MoveGoal()
-                msg.x_abs = self.position_info.x_abs
-                msg.y_abs = self.position_info.y_abs
-                msg.angle_abs = self.position_info.angle_abs - 90.0
-                self.pub2_.publish(msg)
+                msg = MoveCmd()
+                msg.vx = 0.0
+                msg.vy = 0.0
+                msg.vw = -100.0
+                self.pub1_.publish(msg)
+            if key == ord('r'):
+                msg = ArmCmd()
+                msg.act_id = ARM_RST
+                for i in range(10):
+                    self.pub3_.publish(msg)
+            if key == ord('t'):
+                msg = ArmCmd()
+                msg.act_id = ARM_TO_CODE
+                for i in range(10):
+                    self.pub3_.publish(msg)
+            if key == ord('y'):
+                msg = ArmCmd()
+                msg.act_id = ARM_TO_STUFF
+                for i in range(10):
+                    self.pub3_.publish(msg)
             if key == ord('u'):
                 msg = ArmCmd()
-                msg.act_id = ARM1_GRAP1
+                msg.act_id = ARM_GRAB_MATERIAL
                 for i in range(10):
                     self.pub3_.publish(msg)
             if key == ord('i'):
                 msg = ArmCmd()
-                msg.act_id = ARM2_PLACE1
+                msg.act_id = ARM_PLACE_GROUND
                 for i in range(10):
                     self.pub3_.publish(msg)
             if key == ord('o'):
                 msg = ArmCmd()
-                msg.act_id = ARM2_GRAP1
+                msg.act_id = ARM_GRAB_GROUND
                 for i in range(10):
                     self.pub3_.publish(msg)
             if key == ord('p'):
                 msg = ArmCmd()
-                msg.act_id = ARM2_PLACE2
+                msg.act_id = ARM_PLACE_STUFF
                 for i in range(10):
                     self.pub3_.publish(msg)
+            if key == ord('f'):
+                self.reach_target(1, 5)
 
             # Publish the MoveCmd message
         # self.pub1_.publish(self.move_cmd_msg)

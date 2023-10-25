@@ -16,11 +16,11 @@ def generate_launch_description():
             output='screen',
         ),
 
-        Node(
-            package='tt_pkg',
-            executable='detection2.py',
-            output='screen',
-        ),
+        # Node(
+        #     package='tt_pkg',
+        #     executable='detection2.py',
+        #     output='screen',
+        # ),
 
         Node(
             package='tt_pkg',

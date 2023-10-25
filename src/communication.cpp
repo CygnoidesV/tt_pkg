@@ -1,16 +1,21 @@
 #include "rclcpp/rclcpp.hpp"
-#include <rclcpp/clock.hpp>
 #include "tt_pkg/msg/arm_cmd.hpp"
 #include "tt_pkg/msg/move_cmd.hpp"
 #include "tt_pkg/msg/position_info.hpp"
 #include "tt_pkg/protocol.hpp"
+#include <cmath>
+#include <rclcpp/clock.hpp>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <thread>
 #include <unistd.h>
 
+const float PI = std::acos(-1.0);
+
 rclcpp::Publisher<tt_pkg::msg::PositionInfo>::SharedPtr pub1;
+float position_info_setoff[4] = {0, 0, 0, 0};
+bool setoff_flag = 0;
 
 void receive_handler(uint8_t msg_id, uint8_t *data) {
   position_info_t position_info;
@@ -23,14 +28,36 @@ void receive_handler(uint8_t msg_id, uint8_t *data) {
     // printf("Position_info: %f, %f, %f, %d\n", position_info.x_abs,
     // position_info.y_abs, position_info.angle_abs, position_info.stuff_num);
     msg->header.stamp = current_time;
+    msg->stuff_num = position_info.stuff_num;
     msg->x_abs = position_info.x_abs;
     msg->y_abs = position_info.y_abs;
     msg->angle_abs = position_info.angle_abs;
-    msg->stuff_num = position_info.stuff_num;
+
+    // if (!setoff_flag) {
+    //   setoff_flag = 1;
+    //   position_info_setoff[0] = position_info.x_abs;
+    //   position_info_setoff[1] = position_info.y_abs;
+    //   position_info_setoff[2] = position_info.angle_abs;
+    //   position_info_setoff[3] = position_info.angle_abs * PI / 180;
+    //   msg->x_abs = 0;
+    //   msg->y_abs = 0;
+    //   msg->angle_abs = 0;
+    // } else {
+    //   msg->x_abs = position_info.x_abs - position_info_setoff[0];
+    //   msg->y_abs = position_info.y_abs - position_info_setoff[1];
+    //   msg->angle_abs = position_info.angle_abs - position_info_setoff[2];
+    //   if (msg->angle_abs > 180) {
+    //     msg->angle_abs -= 180;
+    //   }
+    //   if (msg->angle_abs < -180) {
+    //     msg->angle_abs += 180;
+    //   }
+    // }
     pub1->publish(*msg);
+    // printf("Position_info_setoff: %f, %f, %f\n", position_info_setoff[0],
+    //        position_info_setoff[1], position_info_setoff[2]);
     // printf("[INFO] [communication_node]: Position_info: %f, %f, %f, %d.\n",
-    // position_info.x_abs, position_info.y_abs, position_info.angle_abs,
-    // position_info.stuff_num);
+    //        msg->x_abs, msg->y_abs, msg->angle_abs, msg->stuff_num);
     break;
 
   default:
@@ -62,6 +89,11 @@ public:
     move_cmd.vx = msg->vx;
     move_cmd.vy = msg->vy;
     move_cmd.vw = msg->vw;
+    // move_cmd.vx = msg->vx * std::cos(position_info_setoff[3]) -
+    //               msg->vy * std::sin(position_info_setoff[3]);
+    // move_cmd.vy = msg->vx * std::sin(position_info_setoff[3]) +
+    //               msg->vy * std::cos(position_info_setoff[3]);
+    // move_cmd.vw = msg->vw;
     send_data(MSG_MOVE_CMD, (uint8_t *)&move_cmd);
     // printf("Move_cmd: %f %f %f\n", move_cmd.vx, move_cmd.vy, move_cmd.vw);
   }

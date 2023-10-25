@@ -1,8 +1,8 @@
-#define __PACKED  __attribute__((packed))
+#define __PACKED __attribute__((packed))
 #define __WEAK __attribute__((weak))
 
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #define SOF 0xA5
 
@@ -20,32 +20,28 @@
 
 const char TOF = 0X5A;
 
-typedef struct __PACKED
-{
-    uint8_t sof;
-    uint8_t msg_id;
-    uint16_t length;
-    // uint8_t crc8;
+typedef struct __PACKED {
+  uint8_t sof;
+  uint8_t msg_id;
+  uint16_t length;
+  // uint8_t crc8;
 } frame_header_t;
 
-typedef struct __PACKED
-{
-    float x_abs;
-    float y_abs;
-    float angle_abs;
-    uint16_t stuff_num;
+typedef struct __PACKED {
+  float x_abs;
+  float y_abs;
+  float angle_abs;
+  uint16_t stuff_num;
 } position_info_t;
 
-typedef struct __PACKED
-{
-    float vx;
-    float vy;
-    float vw;
+typedef struct __PACKED {
+  float vx;
+  float vy;
+  float vw;
 } move_cmd_t;
 
-typedef struct __PACKED
-{
-    uint8_t act_id;
+typedef struct __PACKED {
+  uint8_t act_id;
 } arm_cmd_t;
 
 int protocol_init();

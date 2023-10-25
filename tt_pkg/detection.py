@@ -92,8 +92,9 @@ def detect_PU(img, area):
             contour.append(single)
             ellipse = cv2.fitEllipse(single)  # ( 椭圆拟合
             # 椭圆面积与角度筛选
-            if 3.14 * ellipse[1][0] * ellipse[1][1] <= area*settings_PU['ellipse_max'] and (
-                    30 <= ellipse[2] <= 150 or 210 <= ellipse[2] <= 330):
+            # if 3.14 * ellipse[1][0] * ellipse[1][1] <= area*settings_PU['ellipse_max'] and (
+            #         30 <= ellipse[2] <= 150 or 210 <= ellipse[2] <= 330):
+            if 3.14 * ellipse[1][0] * ellipse[1][1] <= area*settings_PU['ellipse_max']:
                 center = ellipse[0]
                 center = tuple(map(int, center))
                 centers.append(center)
@@ -131,7 +132,7 @@ def detect_PU(img, area):
                 cv2.circle(img, point[1], 2, (0, 255, 0), 2)
         return final
         # return None
-    return None
+    return []
 
 
 def calculate_rgb(img, center):
@@ -316,19 +317,22 @@ if __name__ == "__main__":
         size = ori_img.shape
         t_area = size[0] * size[1]
 
-        codeinfo, points, straight_qrcode = detect_QR(ori_img)
-        if codeinfo:
-            print(codeinfo)
-            a, b = cul_diff(points)
-            if a <= 0.1 or b <= 0.1:  # 斜率差足够小（平行）
-                # 绘制识别框
-                cv2.drawContours(
-                    ori_img, [np.int32(points)], 0, (0, 0, 255), 2)
-                # 绘制解码信息
-                # text_pos = cul_text_pos(points)
-                # cv2.putText(ori_img, codeinfo, text_pos, cv2.FONT_HERSHEY_SIMPLEX,
-                #            0.5,
-                #            (255, 0, 0), 1)
+        try:
+            codeinfo, points, straight_qrcode = detect_QR(ori_img)
+            if codeinfo:
+                print(codeinfo)
+                a, b = cul_diff(points)
+                if a <= 0.1 or b <= 0.1:  # 斜率差足够小（平行）
+                    # 绘制识别框
+                    cv2.drawContours(
+                        ori_img, [np.int32(points)], 0, (0, 0, 255), 2)
+                    # 绘制解码信息
+                    # text_pos = cul_text_pos(points)
+                    # cv2.putText(ori_img, codeinfo, text_pos, cv2.FONT_HERSHEY_SIMPLEX,
+                    #            0.5,
+                    #            (255, 0, 0), 1)
+        except:
+            print("qr_error")
 
         result_r, result_g, result_b = detect_BL(ori_img)
         if result_r[1]:

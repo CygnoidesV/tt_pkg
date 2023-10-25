@@ -8,7 +8,7 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 from tt_pkg.msg import DetectInfo
 from tt_pkg.config import config, settings_BL
-from tt_pkg.detection import detect_QR, detect_BL
+from tt_pkg.detection import detect_QR, detect_BL, detect_PU
 
 def exp(points):
     n = len(points)
@@ -149,14 +149,17 @@ class Detection1(Node):
         # msg_img = self.bridge.cv2_to_imgmsg(ori_img)
         # self.pub4_.publish(msg_img)
 
-        result_tgt = detect_QR(ori_img)
+        size = ori_img.shape
+        t_area = size[0] * size[1]
+        result_tgt = detect_PU(ori_img, t_area)
+        # print(result_tgt)
         for point in result_tgt:
             if point[0] == 1:
-                self.tgt_r.append(point[1])
+                self.target_r.append(point[1])
             if point[0] == 2:
-                self.tgt_g.append(point[1])
+                self.target_g.append(point[1])
             if point[0] == 3:
-                self.tgt_b.append(point[1])
+                self.target_b.append(point[1])
 
         msg = DetectInfo()
         msg.header.stamp = current_time.to_msg()

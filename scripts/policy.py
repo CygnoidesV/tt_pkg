@@ -35,7 +35,7 @@ class Policy(Node):
         self.task_pipeline = [
             "ready",
             "wait_for_task_sequence",
-            # "ARM_GRAP_MATERIAL",
+            "arm_grab_material",
             # "ARM_PLACE_GROUND",
             # "arm2_grap1",
             # "ARM_PLACE_STUFF",
@@ -69,6 +69,7 @@ class Policy(Node):
         self.pub2_ = self.create_publisher(MoveCmd, "move_cmd", 10)
         self.pub3_ = self.create_publisher(ArmCmd, "arm_cmd", 10)
         self.timer_ = self.create_timer(0.04, self.timer_callback)
+        self.get_logger().info("policy_node is started successfully.")
 
     def move_stop(self):
         msg = MoveCmd()
@@ -109,6 +110,7 @@ class Policy(Node):
 
         self.arm_cmd_flag_last = self.arm_cmd_flag
 
+        # print(self.task_pipeline[0])
         if self.task_pipeline[0] == "ready":
             if self.position_info.stuff_num >= 0 and self.position_info.stuff_num <= 3:
                 msg = MoveGoal()
@@ -116,15 +118,7 @@ class Policy(Node):
                     "qr_code_pose")
                 self.pub1_.publish(msg)
                 print(self.task_pipeline)
-                
-                qr_code_pose = config.get("qr_code_pose")
-                road_corner = config.get("road_points")[0]
-                if get_distance([qr_code_pose[0], qr_code_pose[1]], [self.position_info.x_abs, self.position_info.y_abs]) < get_distance([qr_code_pose[0], qr_code_pose[1]], [road_corner[0], road_corner[1]]) / 2:
-                    msg = ArmCmd()
-                    msg.act_id = ARM_TO_CODE
-                    for i in range(10):
-                        self.pub3_.publish(msg)
-                    self.task_pipeline.pop(0)
+                self.task_pipeline.pop(0)
                 return
 
         if self.task_pipeline[0] == "wait_for_task_sequence":
@@ -140,6 +134,14 @@ class Policy(Node):
                     self.pub3_.publish(msg)
                 self.task_pipeline.pop(0)
                 return
+            
+            road_corner = config.get("road_points")[0]
+            position_err = config.get("position_error")
+            if get_distance([road_corner[0], road_corner[1]], [self.position_info.x_abs, self.position_info.y_abs]) < position_err:
+                msg = ArmCmd()
+                msg.act_id = ARM_TO_CODE
+                for i in range(10):
+                    self.pub3_.publish(msg)
 
         if self.task_pipeline[0] == "arm_grab_material":
             if self.position_info.stuff_num == 3:
