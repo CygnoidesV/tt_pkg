@@ -268,7 +268,7 @@ class Policy(Node):
                         "start_pose")
                     self.pub1_.publish(msg)
                     msg_arm = ArmCmd()
-                    msg_arm = ARM_RST
+                    msg_arm.act_id = ARM_RST
                     for i in range(10):
                         self.pub3_.publish(msg_arm)
                 print(self.task_pipeline)
