@@ -40,11 +40,11 @@ def generate_launch_description():
             output='screen',
         ),
 
-        Node(
-            package='tt_pkg',
-            executable='policy.py',
-            output='screen',
-        ),
+        # Node(
+        #     package='tt_pkg',
+        #     executable='policy.py',
+        #     output='screen',
+        # ),
 
         # Node(
         #     package='rosbridge_server',

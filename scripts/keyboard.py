@@ -48,7 +48,6 @@ class Keyboard(Node):
         current_time = rclpy.clock.Clock().now()  # 使用ROS 2的时钟来获取当前时间
         start_time = current_time
         operate_pixel2 = config.get("operate_pixel2")
-        val = config.get("val_camera_to_ground")
         pixel_error = config.get("pixel_error")
         target_info = self.target_info[color - 1]
         while(True):
@@ -57,28 +56,14 @@ class Keyboard(Node):
                 break
             target_info = self.target_info[color - 1]
             if target_info[0] == 0:
-                msg = MoveCmd()
-                msg.vx = self.position_info.x_abs
-                msg.vy = self.position_info.y_abs
-                msg.vw = self.position_info.angle_abs
-                for i in range(10):
-                    self.pub1_.publish(msg) 
+                self.move_stop()
                 continue
             elif abs(target_info[1] - operate_pixel2[0]) > pixel_error or abs(target_info[2] - operate_pixel2[1]) > pixel_error:
-                angle = self.position_info.angle_abs * math.pi / 180
-                msg = MoveCmd()
-                msg.vx = self.position_info.x_abs - val * math.cos(angle) - val * math.sin(angle)
-                msg.vy = self.position_info.y_abs - val * math.sin(angle) + val * math.cos(angle)
-                msg.vw = self.position_info.angle_abs
-                for i in range(10):
-                    self.pub1_.publish(msg) 
+                w = math.atan2(operate_pixel2[0] - target_info[1], operate_pixel2[1] - target_info[2])
+                w = w *180.0 / math.pi
+                self.move_cam(w)
             else:
-                msg = MoveCmd()
-                msg.vx = self.position_info.x_abs
-                msg.vy = self.position_info.y_abs
-                msg.vw = self.position_info.angle_abs
-                for i in range(10):
-                    self.pub1_.publish(msg) 
+                self.move_stop()
                 break
 
         msg = ArmCmd()
@@ -86,7 +71,24 @@ class Keyboard(Node):
         for i in range(10):
             self.pub3_.publish(msg) 
 
+    def move_cam(self, w):
+        val = config.get("val_camera_to_ground")
+        angle = self.position_info.angle_abs * math.pi / 180.0
+        w = w * math.pi / 180.0
+        msg = MoveCmd()
+        msg.vx = self.position_info.x_abs + val * math.sin(w + angle)
+        msg.vy = self.position_info.y_abs - val * math.cos(w + angle)
+        msg.vw = self.position_info.angle_abs
+        for i in range(10):
+            self.pub1_.publish(msg)
 
+    def move_stop(self):
+        msg = MoveCmd()
+        msg.vx = self.position_info.x_abs
+        msg.vy = self.position_info.y_abs
+        msg.vw = self.position_info.angle_abs
+        for i in range(10):
+            self.pub1_.publish(msg)
 
     def sub1_callback(self, msg):
         self.position_info = msg
@@ -101,7 +103,7 @@ class Keyboard(Node):
 
         # Check if a key is pressed
         key = self.stdscr.getch()
-        if key != curses.ERR:
+        if key != curses.ERR: 
             if key == ord('='):
                 pose = config.get("end_pose")
                 self.move_goal_msg.x_abs, self.move_goal_msg.y_abs, self.move_goal_msg.angle_abs = pose
@@ -152,46 +154,31 @@ class Keyboard(Node):
                 self.pub2_.publish(self.move_goal_msg)
             if key == ord(' '):
                 msg = MoveCmd()
-                msg.vx = 0.0
-                msg.vy = 0.0
-                msg.vw = 0.0
+                msg.vx = self.position_info.x_abs
+                msg.vy = self.position_info.y_abs
+                msg.vw = self.position_info.angle_abs
                 self.pub1_.publish(msg)
             if key == ord('w'):
-                msg = MoveCmd()
-                msg.vx = 0.0
-                msg.vy = -100.0
-                msg.vw = 0.0
-                self.pub1_.publish(msg)
+                self.move_cam(0)
             if key == ord('a'):
-                msg = MoveCmd()
-                msg.vx = 100.0
-                msg.vy = 0.0
-                msg.vw = 0.0
-                self.pub1_.publish(msg)
+                self.move_cam(90)
             if key == ord('s'):
-                msg = MoveCmd()
-                msg.vx = 0.0
-                msg.vy = 100.0
-                msg.vw = 0.0
-                self.pub1_.publish(msg)
+                self.move_cam(180)
             if key == ord('d'):
+                self.move_cam(-90)
+            if key == ord('q'): 
+                val = config.get("val_camera_to_ground")
                 msg = MoveCmd()
-                msg.vx = -100.0
-                msg.vy = 0.0
-                msg.vw = 0.0
-                self.pub1_.publish(msg)
-            if key == ord('q'):
-                msg = MoveCmd()
-                msg.vx = 0.0
-                msg.vy = 0.0
-                msg.vw = 100.0
+                msg.vx = self.position_info.x_abs
+                msg.vy = self.position_info.y_abs
+                msg.vw = self.position_info.angle_abs + 90
                 self.pub1_.publish(msg)
             if key == ord('e'):
+                val = config.get("val_camera_to_ground")
                 msg = MoveCmd()
-                msg.vx = 0.0
-                msg.vy = 0.0
-                msg.vw = -100.0
-                self.pub1_.publish(msg)
+                msg.vx = self.position_info.x_abs
+                msg.vy = self.position_info.y_abs
+                msg.vw = self.position_info.angle_abs - 90
             if key == ord('r'):
                 msg = ArmCmd()
                 msg.act_id = ARM_RST
@@ -233,7 +220,6 @@ class Keyboard(Node):
                 self.reach_target(2)
             if key == ord('c'):
                 self.reach_target(3)
-
             # Publish the MoveCmd message
         # self.pub1_.publish(self.move_cmd_msg)
 

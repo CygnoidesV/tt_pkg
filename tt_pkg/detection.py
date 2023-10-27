@@ -67,6 +67,7 @@ def cul_pos(points):  # 计算坐标点的平均值
 
 
 def detect_PU(img, area):
+    area_cul=area[0]*area[1]
     # 将图片转换为灰度图
     gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(4, 4))  # 自适应直方图均衡
@@ -86,7 +87,7 @@ def detect_PU(img, area):
     contour = []
     centers = []
     for single in contours:
-        if (settings_PU['area_min'] <= cv2.contourArea(single) <= area*settings_PU['area_max'] and cv2.arcLength(single,
+        if (settings_PU['area_min'] <= cv2.contourArea(single) <= area_cul*settings_PU['area_max'] and cv2.arcLength(single,
                                                                                                                  True)
                 >= settings_PU['leng'] and len(single) >= 5):  # 画出近似椭圆至少需要5个点
             contour.append(single)
@@ -94,14 +95,14 @@ def detect_PU(img, area):
             # 椭圆面积与角度筛选
             # if 3.14 * ellipse[1][0] * ellipse[1][1] <= area*settings_PU['ellipse_max'] and (
             #         30 <= ellipse[2] <= 150 or 210 <= ellipse[2] <= 330):
-            if 3.14 * ellipse[1][0] * ellipse[1][1] <= area*settings_PU['ellipse_max']:
+            if 3.14 * ellipse[1][0] * ellipse[1][1] <= area_cul*settings_PU['ellipse_max']:
                 center = ellipse[0]
                 center = tuple(map(int, center))
                 centers.append(center)
                 # cv2.ellipse(img, ellipse, (0, 255, 0), 2)
-                # cv2.circle(ori_img, center, 2, (0, 255, 0), 2)
+                # cv2.circle(img, center, 2, (0, 255, 0), 2)
     # if contour:
-    #     cv2.drawContours(img, contour, -1, (0, 0, 255), 3)
+        # cv2.drawContours(img, contour, -1, (0, 0, 255), 3)
         # cv2.putText(img, str(area), centers[0], cv2.FONT_HERSHEY_SIMPLEX,
         #             0.5,
         #             (255, 0, 0), 1)
@@ -124,41 +125,44 @@ def detect_PU(img, area):
         for points in selected:
             result = cul_pos([points])
             try:
-                analysis_result = calculate_rgb(img, result)  # 判断颜色
+                analysis_result = calculate_rgb(img, result,area)  # 判断颜色
                 if analysis_result:
                     final.append(analysis_result)
             except:
                 return []
-        if check_distance(final, 50) and check_rgb(final) and final:  # 防止一个标靶中错判出多个点，或者误判出同种颜色
+        if check_distance(final, 40) and check_rgb(final) and final:  # 防止一个标靶中错判出多个点，或者误判出同种颜色
         # if check_rgb(final) and final:  # 防止一个标靶中错判出多个点，或者误判出同种颜色
+        # if final:
             for point in final:
-                cv2.circle(img, point[1], 2, (0, 255, 0), 2)
+                cv2.circle(img, point[1], 10, (0, 255, 0), 3)
         return final
         # return None
     return []
 
 
-def calculate_rgb(img, center):
+def calculate_rgb(img, center,area):
     hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)  # 转换BDR色域为HSV
     x = center[0]
     y = center[1]
-    # 获取指定坐标点周围的矩形区域
-    hsv = hsv_img[y, x]
-    if 0 <= hsv[0] <= 5 or 175 <= hsv[0] <= 180:
-        # cv2.putText(img, "red", center, cv2.FONT_HERSHEY_SIMPLEX,
-        #            0.75,
-        #            (0, 0, 255), 2)
-        return 1, center
-    if 35 <= hsv[0] <= 77:
-        # cv2.putText(img, "green", center, cv2.FONT_HERSHEY_SIMPLEX,
-        #            0.75,
-        #            (0, 0, 255), 2)
-        return 2, center
-    if 100 <= hsv[0] <= 124:
-        # cv2.putText(img, "blue", center, cv2.FONT_HERSHEY_SIMPLEX,
-        #            0.75,
-        #            (0, 0, 255), 2)
-        return 3, center
+    if not(area[0]-x<0 or area[1]-y<0 or x<0 or y<0):
+    
+        # 获取指定坐标点
+        hsv = hsv_img[y, x]
+        if 0 <= hsv[0] <= 5 or 175 <= hsv[0] <= 180:
+                # cv2.putText(img, "red", center, cv2.FONT_HERSHEY_SIMPLEX,
+                #            0.75,
+                #            (0, 0, 255), 2)
+            return 1, center
+        if 35 <= hsv[0] <= 92:
+                # cv2.putText(img, "green", center, cv2.FONT_HERSHEY_SIMPLEX,
+                #            0.75,
+                #            (0, 0, 255), 2)
+            return 2, center
+        if 100 <= hsv[0] <= 130:
+                # cv2.putText(img, "blue", center, cv2.FONT_HERSHEY_SIMPLEX,
+                #            0.75,
+                #            (0, 0, 255), 2)
+            return 3, center
     return []
 
 
@@ -318,7 +322,7 @@ if __name__ == "__main__":
         if ori_img is None:
             continue
         size = ori_img.shape
-        t_area = size[0] * size[1]
+        t_area = [size[0] , size[1]]
 
         try:
             codeinfo, points, straight_qrcode = detect_QR(ori_img)

@@ -108,8 +108,8 @@ class Policy(Node):
         stuff_num_last = self.position_info.stuff_num
         self.position_info = msg
         if stuff_num_last != msg.stuff_num:
-            time.sleep(0.5)
             self.task_index = self.task_index + 1
+            time.sleep(0.2)
             self.arm_cmd_flag = 0
 
     def timer_callback(self):
@@ -153,10 +153,6 @@ class Policy(Node):
                     self.pub3_.publish(msg)
                 self.task_pipeline.pop(0)
                 return
-
-        if self.task_index < 0 or self.task_index > 6:
-            print("Task_index out of range!")
-            return
         
         if self.task_pipeline[0] == "arm_grab_material":
             if self.position_info.stuff_num == 3:
@@ -260,13 +256,14 @@ class Policy(Node):
                     msg = MoveGoal()
                     msg.x_abs, msg.y_abs, msg.angle_abs = config.get(
                         "material_pose")
-                    self.task_index = self.task_index + 3
+                    # self.task_index = self.task_index + 3
                     self.pub1_.publish(msg)
                 else:
                     msg = MoveGoal()
                     msg.x_abs, msg.y_abs, msg.angle_abs = config.get(
-                        "start_pose")
+                        "end_pose")
                     self.pub1_.publish(msg)
+                    time.sleep(1)
                     msg_arm = ArmCmd()
                     msg_arm.act_id = ARM_RST
                     for i in range(10):
