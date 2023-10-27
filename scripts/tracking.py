@@ -148,11 +148,11 @@ class Tracking(Node):
         self.position_info = msg
 
     def sub2_callback(self, msg):
-        # if len(self.cmd_queue) != 0:
-        #     return
+        if len(self.cmd_queue) != 0:
+            return
         self.cmd_queue = get_queue([self.position_info.x_abs, self.position_info.y_abs,self.position_info.angle_abs], 
                                    [msg.x_abs, msg.y_abs, msg.angle_abs], self.road_points)
-        print("Cmd_queue: ", self.cmd_queue)
+        # print("Cmd_queue: ", self.cmd_queue)
 
     def timer_callback(self):
         current_time = rclpy.clock.Clock().now()  # 使用ROS 2的时钟来获取当前时间
@@ -161,12 +161,11 @@ class Tracking(Node):
 
         # print("Cmd_queue: ", self.cmd_queue)
         vx = self.cmd_queue[0][0]
-        vy = self.cmd_queue[0][1] 
+        vy = self.cmd_queue[0][1]
         # vx = pid_a.update(self.position_info.x_abs - self.position_info_last.x_abs, vx_tmp)
         # vy = pid_a.update(self.position_info.y_abs - self.position_info_last.y_abs, vy_tmp)
         vw = self.cmd_queue[0][2]
-        
-        print("Goal: ", self.cmd_queue[0],"\nPosition_info: ", self.position_info.x_abs, self.position_info.y_abs, self.position_info.angle_abs)
+    
         position_error = config.get("position_error")
         angle_error = config.get("angle_error")
 
@@ -175,6 +174,7 @@ class Tracking(Node):
             # if len(self.cmd_queue) == 0:
             #     self.move_stop()
         else:
+            # print("Cmd_queue: ", self.cmd_queue,"\nPosition_info: ", self.position_info.x_abs, self.position_info.y_abs, self.position_info.angle_abs)
             msg = MoveCmd()
             msg.vx = float(vx)
             msg.vy = float(vy)

@@ -16,6 +16,15 @@ ARM_GRAB_GROUND = 0x06
 ARM_PLACE_STUFF = 0x07
 
 
+def get_time_diff(stamp1, stamp2):
+    # 获取时间戳并将其转换为秒
+    timestamp1 = stamp1.sec + stamp1.nanosec / 1e9
+    timestamp2 = stamp2.sec + stamp2.nanosec / 1e9
+
+    # 计算时间差
+    time_difference = abs(timestamp1 - timestamp2)
+    return time_difference
+
 class Keyboard(Node):
 
     def __init__(self, stdscr):
@@ -35,17 +44,49 @@ class Keyboard(Node):
         self.stdscr = stdscr
         self.move_goal_msg = MoveGoal()
 
-    def reach_target(self, color, k):
-        if self.target_info[color - 1][0] == 0:
-            return
+    def reach_target(self, color):
+        current_time = rclpy.clock.Clock().now()  # 使用ROS 2的时钟来获取当前时间
+        start_time = current_time
         operate_pixel2 = config.get("operate_pixel2")
-        p_err = [k * (self.target_info[color - 1][1] - operate_pixel2[0]), k * (self.target_info[color - 1][2] - operate_pixel2[1])]
-        angle = self.position_info.angle_abs * math.pi / 180
-        msg = MoveCmd()
-        msg.vx = self.position_info.x_abs - p_err[0] * math.cos(angle) - p_err[1] * math.sin(angle)
-        msg.vy = self.position_info.y_abs - p_err[0] * math.sin(angle) + p_err[1] * math.cos(angle)
-        msg.vw = self.position_info.angle_abs
-        self.pub1_.publish(msg)
+        val = config.get("val_camera_to_ground")
+        pixel_error = config.get("pixel_error")
+        target_info = self.target_info[color - 1]
+        while(True):
+            current_time = rclpy.clock.Clock().now()  # 使用ROS 2的时钟来获取当前时间
+            if get_time_diff(current_time.to_msg(), start_time.to_msg()) > config.get("target_timeout"):
+                break
+            target_info = self.target_info[color - 1]
+            if target_info[0] == 0:
+                msg = MoveCmd()
+                msg.vx = self.position_info.x_abs
+                msg.vy = self.position_info.y_abs
+                msg.vw = self.position_info.angle_abs
+                for i in range(10):
+                    self.pub1_.publish(msg) 
+                continue
+            elif abs(target_info[1] - operate_pixel2[0]) > pixel_error or abs(target_info[2] - operate_pixel2[1]) > pixel_error:
+                angle = self.position_info.angle_abs * math.pi / 180
+                msg = MoveCmd()
+                msg.vx = self.position_info.x_abs - val * math.cos(angle) - val * math.sin(angle)
+                msg.vy = self.position_info.y_abs - val * math.sin(angle) + val * math.cos(angle)
+                msg.vw = self.position_info.angle_abs
+                for i in range(10):
+                    self.pub1_.publish(msg) 
+            else:
+                msg = MoveCmd()
+                msg.vx = self.position_info.x_abs
+                msg.vy = self.position_info.y_abs
+                msg.vw = self.position_info.angle_abs
+                for i in range(10):
+                    self.pub1_.publish(msg) 
+                break
+
+        msg = ArmCmd()
+        msg.act_id = ARM_PLACE_GROUND
+        for i in range(10):
+            self.pub3_.publish(msg) 
+
+
 
     def sub1_callback(self, msg):
         self.position_info = msg
@@ -186,8 +227,12 @@ class Keyboard(Node):
                 msg.act_id = ARM_PLACE_STUFF
                 for i in range(10):
                     self.pub3_.publish(msg)
-            if key == ord('f'):
-                self.reach_target(1, 5)
+            if key == ord('z'):
+                self.reach_target(1)
+            if key == ord('x'):
+                self.reach_target(2)
+            if key == ord('c'):
+                self.reach_target(3)
 
             # Publish the MoveCmd message
         # self.pub1_.publish(self.move_cmd_msg)

@@ -123,9 +123,12 @@ def detect_PU(img, area):
         final = []
         for points in selected:
             result = cul_pos([points])
-            analysis_result = calculate_rgb(img, result)  # 判断颜色
-            if analysis_result:
-                final.append(analysis_result)
+            try:
+                analysis_result = calculate_rgb(img, result)  # 判断颜色
+                if analysis_result:
+                    final.append(analysis_result)
+            except:
+                return []
         if check_distance(final, 50) and check_rgb(final) and final:  # 防止一个标靶中错判出多个点，或者误判出同种颜色
         # if check_rgb(final) and final:  # 防止一个标靶中错判出多个点，或者误判出同种颜色
             for point in final:

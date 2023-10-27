@@ -4,15 +4,15 @@
 cmd_queue_test: [[0, 0, 0], [-170, 120, 0], [-170, 1850, 0], [-1750, 1850, 0], [-1750, 150, 0], [-170, 120, 0], [0, 0, 0]]
 
 road_points:
-  - [0.0, 145.0]
-  - [1850.0, 190.0]
-  - [1840.0, 1754.0]
-  - [75.0, 1758]
+  - [0.0, 150.0]
+  - [1900.0, 190.0]
+  - [1890.0, 1750.0]
+  - [80.0, 1760]
 
 start_pose: [0.0, 0.0, 0.0]
-qr_code_pose: [645.0, 180.0, 0.0]
-material_pose: [1453.0, 125.0, 0.0]
-machining_pose: [1890.0, 1076.0, 90.0]
+qr_code_pose: [645.0, 210.0, 0.0]
+material_pose: [1455.0, 103.0, 0.0]
+machining_pose: [1890.0, 1056.0, 90.0]
 machining_red_pose: [1934.0, 921.0, 90.0]
 machining_green_pose: [1934.0, 1074.0, 90.0]
 machining_blue_pose: [1934.0, 1220.0, 90.0]
@@ -34,27 +34,30 @@ end_pose: [50.0, 0.0, 180.0]
 # staging_green_pose: [-60.0, 2000.0, 180.0]
 # staging_blue_pose: [-180.0, 1900.0, 180.0]
 
-operate_pixel1: [100, 480]
-operate_pixel2: [160, 120]
+operate_pixel1: [320, 250]
+operate_pixel2: [315, 245]
 operate_err: 50
 
+target_timeout: 10
 cmd_delay: 100
 max_time_diff: 0.5
 frame_buff: 5 
-max_var: 10
+max_var: 40
 
 pid_c: [5.0, 0.1, 0.0] #Kp, Ki, Kd]
 c_err_max: 1000
 c_max: 700
 c_min: 10
-pixel_error: 5
+pixel_error: 2
+
+val_camera_to_ground: 100
 
 # pid_v: [4.0, 0.0005, 0.005] #Kp, Ki, Kd for 700 mm/s
 pid_v: [4.0, 0.01, 0.005] #Kp, Ki, Kd
 v_err_max: 1000.0
 v_max: 700.0
 v_min: 0.0
-position_error: 10.0
+position_error: 20.0
 
 # pid_a: [] #Kp, Ki, Kd for 700 mm/s
 pid_a: [6.0, 0.0, 0.0] #Kp, Ki, Kd
@@ -66,7 +69,7 @@ pid_w: [15.0, 0.01, 0.0] #Kp, Ki, Kd
 w_err_max: 1000.0
 w_max: 700.0
 w_min: 0.0
-angle_error: 3.0
+angle_error: 10.0
 
 settings_BL:
   # 摄像头参数

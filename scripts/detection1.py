@@ -162,6 +162,9 @@ class Detection1(Node):
                 self.target_b.append(point[1])
 
         msg = DetectInfo()
+        # operate_pixel2 = config.get("operate_pixel2")
+        # msg.r_x = msg.g_x = msg.b_x = operate_pixel2[0]
+        # msg.r_y = msg.g_y = msg.b_y = operate_pixel2[1]
         msg.header.stamp = current_time.to_msg()
         if len(self.target_r) >= config.get("frame_buff"):
             ave, var = exp(self.target_r)
