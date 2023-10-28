@@ -28,3 +28,8 @@ git clone https://github.com/CygnoidesV/tt_pkg.git
 export DISPLAY=:0 // 根据显示设备编号更换数字
 xhost + 
 ```
+
+2.send topic in terminal
+```
+ros2 topic pub -r 50 task_sequence std_msgs/msg/String "data: '123+312'"
+```

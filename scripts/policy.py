@@ -49,7 +49,21 @@ class Policy(Node):
     def __init__(self):
         self.task_pipeline = [
             "ready",
-            "wait_for_task_sequence",
+            "arm_grab_staging",
+            "arm_grab_staging1",
+            "arm_grab_staging2",
+            "arm_grab_staging3",
+            "arm_place_machining",
+            "arm_place_machining1",
+            "arm_place_machining2",
+            "arm_place_machining3",
+            "arm_grab_machining1",
+            "arm_grab_machining2",
+            "arm_grab_machining3",
+            "arm_place_material",
+            "arm_place_material1",
+            "arm_place_material2",
+            "arm_place_material3",
             "arm_grab_staging",
             "arm_grab_staging1",
             "arm_grab_staging2",
@@ -105,12 +119,10 @@ class Policy(Node):
             self.pub1_.publish(msg)
 
     def sub1_callback(self, msg):
-        if self.task_sequence:
-            return
         if len(msg.data) == 7:
             self.task_sequence = [int(msg.data[0]), int(msg.data[1]), int(
                 msg.data[2]), int(msg.data[4]), int(msg.data[5]), int(msg.data[6])]
-            print(self.task_sequence)
+        print("Task_sequence: ", self.task_sequence)
 
     def sub2_callback(self, msg):
         if self.arm_cmd_flag_last == 0:
@@ -129,16 +141,12 @@ class Policy(Node):
             self.target_info = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
 
     def sub4_callback(self, msg):
-        stuff_num_last = self.position_info.stuff_num
         self.position_info = msg
-        if stuff_num_last != msg.stuff_num:
-            self.task_index = self.task_index + 1
-            time.sleep(0.2)
-            self.arm_cmd_flag = 0
 
     def timer_callback(self):
         if len(self.task_pipeline) == 0:
             return
+        # print("Task_sequence: ", self.task_sequence)
 
         # print(self.task_pipeline[0])
         # print("Position_info: ", self.position_info.x_abs, self.position_info.y_abs, self.position_info.angle_abs)
@@ -188,7 +196,8 @@ class Policy(Node):
                 msg = MoveGoal()
                 msg.x_abs, msg.y_abs, msg.angle_abs = goal_pose
                 self.pub1_.publish(msg)
-                
+
+            time.sleep(0.5)   
             msg = ArmCmd()
             msg.act_id = ARM_GRAB_GROUND1
             self.pub3_.publish(msg)
@@ -208,7 +217,8 @@ class Policy(Node):
                 msg = MoveGoal()
                 msg.x_abs, msg.y_abs, msg.angle_abs = goal_pose
                 self.pub1_.publish(msg)
-                
+            
+            time.sleep(0.5)   
             msg = ArmCmd()
             msg.act_id = ARM_GRAB_GROUND2
             self.pub3_.publish(msg)
@@ -228,7 +238,8 @@ class Policy(Node):
                 msg = MoveGoal()
                 msg.x_abs, msg.y_abs, msg.angle_abs = goal_pose
                 self.pub1_.publish(msg)
-                
+            
+            time.sleep(0.5)   
             msg = ArmCmd()
             msg.act_id = ARM_GRAB_GROUND3
             self.pub3_.publish(msg)
@@ -246,7 +257,7 @@ class Policy(Node):
         
         if self.task_pipeline[0] == "arm_place_machining1":
             if self.position_info.stuff_num == 2:
-                self.task_index = 1
+                self.task_index = self.task_index + 1
                 self.task_pipeline.pop(0)
                 return
 
@@ -261,6 +272,7 @@ class Policy(Node):
                 msg.x_abs, msg.y_abs, msg.angle_abs = goal_pose
                 self.pub1_.publish(msg)
             
+            time.sleep(0.5)   
             self.machining_poses[color - 1] = [self.position_info.x_abs, self.position_info.y_abs, self.position_info.angle_abs]
             msg = ArmCmd()
             msg.act_id = ARM_PLACE_GROUND1
@@ -269,7 +281,7 @@ class Policy(Node):
         
         if self.task_pipeline[0] == "arm_place_machining2":
             if self.position_info.stuff_num == 1:
-                self.task_index = 2
+                self.task_index = self.task_index + 1
                 self.task_pipeline.pop(0)
                 return
 
@@ -284,7 +296,7 @@ class Policy(Node):
                 msg.x_abs, msg.y_abs, msg.angle_abs = goal_pose
                 self.pub1_.publish(msg)
             
-            
+            time.sleep(0.5)   
             self.machining_poses[color - 1] = [self.position_info.x_abs, self.position_info.y_abs, self.position_info.angle_abs]
             msg = ArmCmd()
             msg.act_id = ARM_PLACE_GROUND2
@@ -293,7 +305,7 @@ class Policy(Node):
         
         if self.task_pipeline[0] == "arm_place_machining3":
             if self.position_info.stuff_num == 0:
-                self.task_index = 0
+                self.task_index = self.task_index - 2
                 self.task_pipeline.pop(0)
                 return
 
@@ -308,7 +320,7 @@ class Policy(Node):
                 msg.x_abs, msg.y_abs, msg.angle_abs = goal_pose
                 self.pub1_.publish(msg)
             
-            
+            time.sleep(0.5)   
             self.machining_poses[color - 1] = [self.position_info.x_abs, self.position_info.y_abs, self.position_info.angle_abs]
             msg = ArmCmd()
             msg.act_id = ARM_PLACE_GROUND3
@@ -317,7 +329,7 @@ class Policy(Node):
 
         if self.task_pipeline[0] == "arm_grab_machining1":
             if self.position_info.stuff_num == 1:
-                self.task_index = 1
+                self.task_index = self.task_index + 1
                 self.task_pipeline.pop(0)
                 return
 
@@ -333,7 +345,7 @@ class Policy(Node):
                 self.pub1_.publish(msg)
             
             
-            self.machining_poses[color - 1] = [self.position_info.x_abs, self.position_info.y_abs, self.position_info.angle_abs]
+            time.sleep(0.5)   
             msg = ArmCmd()
             msg.act_id = ARM_GRAB_GROUND4
             self.pub3_.publish(msg)
@@ -341,7 +353,7 @@ class Policy(Node):
         
         if self.task_pipeline[0] == "arm_grab_machining2":
             if self.position_info.stuff_num == 2:
-                self.task_index = 2
+                self.task_index = self.task_index + 1
                 self.task_pipeline.pop(0)
                 return
 
@@ -357,7 +369,7 @@ class Policy(Node):
                 self.pub1_.publish(msg)
             
             
-            self.machining_poses[color - 1] = [self.position_info.x_abs, self.position_info.y_abs, self.position_info.angle_abs]
+            time.sleep(0.5)   
             msg = ArmCmd()
             msg.act_id = ARM_GRAB_GROUND5
             self.pub3_.publish(msg)
@@ -365,7 +377,7 @@ class Policy(Node):
         
         if self.task_pipeline[0] == "arm_grab_machining3":
             if self.position_info.stuff_num == 3:
-                self.task_index = 0
+                self.task_index = self.task_index - 2
                 self.task_pipeline.pop(0)
                 return
 
@@ -380,8 +392,7 @@ class Policy(Node):
                 msg.x_abs, msg.y_abs, msg.angle_abs = goal_pose
                 self.pub1_.publish(msg)
             
-            
-            self.machining_poses[color - 1] = [self.position_info.x_abs, self.position_info.y_abs, self.position_info.angle_abs]
+            time.sleep(0.5)
             msg = ArmCmd()
             msg.act_id = ARM_GRAB_GROUND6
             self.pub3_.publish(msg)
@@ -399,7 +410,7 @@ class Policy(Node):
 
         if self.task_pipeline[0] == "arm_place_material1":
             if self.position_info.stuff_num == 2:
-                self.task_index = 1
+                self.task_index = self.task_index + 1
                 self.task_pipeline.pop(0)
             color = self.task_sequence[self.task_index]
             goal_pose = config.get("material_pose")
@@ -412,7 +423,7 @@ class Policy(Node):
         
         if self.task_pipeline[0] == "arm_place_material2":
             if self.position_info.stuff_num == 1:
-                self.task_index = 2
+                self.task_index = self.task_index + 1
                 self.task_pipeline.pop(0)
             color = self.task_sequence[self.task_index]
             goal_pose = config.get("material_pose")
@@ -425,7 +436,7 @@ class Policy(Node):
         
         if self.task_pipeline[0] == "arm_place_material3":
             if self.position_info.stuff_num == 0:
-                self.task_index = 0
+                self.task_index = self.task_index + 1
                 self.task_pipeline.pop(0)
             color = self.task_sequence[self.task_index]
             goal_pose = config.get("material_pose")

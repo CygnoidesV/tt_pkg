@@ -2,6 +2,7 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
+from tt_pkg.msg import PositionInfo
 import tkinter as tk
 import time
 import threading
@@ -15,12 +16,21 @@ class Display(Node):
         super().__init__("display_node")
         self.sub1_ = self.create_subscription(
             String, "task_sequence", self.sub1_callback, 10)
+        self.sub2_ = self.create_subscription(PositionInfo(), "position_info", self.sub2_callback, 10)
+        
         self.get_logger().info("display_node is started successfully.")
 
         self.task_sequence = None
+        self.position_info = PositionInfo()
+        self.position_info.stuff_num = 100
+    
+    def sub2_callback(self, msg):
+        self.position_info = msg
 
     def sub1_callback(self, msg):
-        self.task_sequence = msg.data
+        if self.position_info.stuff_num != 100:
+            time.sleep(1)
+            self.task_sequence = msg.data
 
 
 def gui_part(display_node):
