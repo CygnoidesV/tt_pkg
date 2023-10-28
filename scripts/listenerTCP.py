@@ -22,7 +22,7 @@ class NetworkPortListener(Node):
         self.get_logger().info("Listening for incoming connections...")
         while rclpy.ok():
             client_socket, addr = self.tcp_socket.accept()
-            # self.get_logger().info(f"Accepted connection from {addr[0]}:{addr[1]}")
+            self.get_logger().info(f"Accepted connection from {addr[0]}:{addr[1]}")
             self.handle_client(client_socket)
 
     def handle_client(self, client_socket):
