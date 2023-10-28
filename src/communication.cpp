@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
   const char *password = "123"; // 设置密码
   // 要执行的命令
   const char *cmd =
-      "sudo -S chmod 777 /dev/ttyUSB0"; // 替换 your_sensitive_command
+      "sudo -S chmod 777 /dev/ttyUSB1"; // 替换 your_sensitive_command
                                         // 为实际的敏感命令
   // 打开管道以与sudo交互
   FILE *pipe = popen(cmd, "w");

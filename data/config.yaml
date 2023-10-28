@@ -4,22 +4,22 @@
 cmd_queue_test: [[0, 0, 0], [-170, 120, 0], [-170, 1850, 0], [-1750, 1850, 0], [-1750, 150, 0], [-170, 120, 0], [0, 0, 0]]
 
 road_points:
-  - [0.0, 150.0]
-  - [1850.0, 190.0]
-  - [1850.0, 1700.0]
-  - [90.0, 1700]
+  - [10.0, 150.0]
+  - [1860.0, 141.0]
+  - [1854.0, 1720.0]
+  - [130.0, 1700]
 
 start_pose: [0.0, 0.0, 0.0]
-qr_code_pose: [645.0, 210.0, 0.0]
-material_pose: [1445.0, 105.0, 0.0]
-machining_pose: [1890.0, 1070.0, 90.0]
-machining_red_pose: [1935.0, 910.0, 90.0]
-machining_green_pose: [1935.0, 1060.0, 90.0]
-machining_blue_pose: [1935.0, 1210.0, 90.0]
-staging_pose: [1030.0, 1770.0, 180.0]
-staging_red_pose: [1200.0, 1815.0, 180.0]
-staging_green_pose: [1050.0, 1815.0, 180.0]
-staging_blue_pose: [900.0, 1815.0, 180.0]
+qr_code_pose: [650.0, 180.0, 0.0]
+material_pose: [1432.0, 112.0, 0.0]
+machining_pose: [1890.0, 1040.0, 90.0]
+machining_red_pose: [1948.0, 884.0, 90.0]
+machining_green_pose: [1948.0, 1047.0, 90.0]
+machining_blue_pose: [1946.0, 1185.0, 90.0]
+staging_pose: [1100.0, 1700.0, 180.0]
+staging_red_pose: [1245.0, 1763.0, 180.0]
+staging_green_pose: [1105.0, 1770.0, 180.0]
+staging_blue_pose: [945.0, 1770.0, 180.0]
 end_pose: [50.0, 0.0, 180.0]
 
 # start_pose: [0.0, 0.0, 0.0]
@@ -36,9 +36,9 @@ end_pose: [50.0, 0.0, 180.0]
 
 operate_pixel1: [320, 250]
 operate_pixel2: [315, 300]
-operate_err: 50
+operate_err: 30
 
-target_timeout: 10
+running_timeout: 10
 cmd_delay: 100
 max_time_diff: 0.5
 frame_buff: 10
@@ -57,7 +57,7 @@ pid_v: [4.0, 0.01, 0.005] #Kp, Ki, Kd
 v_err_max: 1000.0
 v_max: 700.0
 v_min: 0.0
-position_error: 20.0
+position_error: 10.0
 
 # pid_a: [] #Kp, Ki, Kd for 700 mm/s
 pid_a: [6.0, 0.0, 0.0] #Kp, Ki, Kd

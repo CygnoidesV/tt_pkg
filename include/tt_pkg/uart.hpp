@@ -4,7 +4,7 @@
 #include <termios.h>
 #include <errno.h>
 
-#define DEVICE "/dev/ttyUSB0"
+#define DEVICE "/dev/ttyUSB1"
 
 int uart_open(const char *device);
 int uart_close(int fd);

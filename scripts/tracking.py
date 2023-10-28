@@ -157,6 +157,11 @@ class Tracking(Node):
     def timer_callback(self):
         current_time = rclpy.clock.Clock().now()  # 使用ROS 2的时钟来获取当前时间
         if len(self.cmd_queue) == 0 or get_time_diff(current_time.to_msg(), self.position_info.header.stamp) > config.get("max_time_diff"):
+            msg = MoveCmd()
+            msg.vx = self.position_info.x_abs
+            msg.vy = self.position_info.y_abs
+            msg.vw = self.position_info.angle_abs
+            self.pub1_.publish(msg)
             return
 
         # print("Cmd_queue: ", self.cmd_queue)
@@ -174,7 +179,7 @@ class Tracking(Node):
             # if len(self.cmd_queue) == 0:
             #     self.move_stop()
         else:
-            # print("Cmd_queue: ", self.cmd_queue,"\nPosition_info: ", self.position_info.x_abs, self.position_info.y_abs, self.position_info.angle_abs)
+            print("Cmd_queue: ", self.cmd_queue,"\nPosition_info: ", self.position_info.x_abs, self.position_info.y_abs, self.position_info.angle_abs)
             msg = MoveCmd()
             msg.vx = float(vx)
             msg.vy = float(vy)

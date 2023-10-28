@@ -53,6 +53,8 @@ class Policy(Node):
         self.target_info = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
         self.position_info = PositionInfo()
         self.position_info.stuff_num = 100
+        self.cur_time = rclpy.clock.Clock().now()
+        self.last_time = self.cur_time
 
         self.machining_poses = [config.get("machining_red_pose"), config.get("machining_green_pose"), config.get("machining_blue_pose")]
         self.stagine_poses = [config.get("staging_red_pose"), config.get("staging_green_pose"), config.get("staging_blue_pose")]
@@ -186,9 +188,9 @@ class Policy(Node):
 
         if self.task_pipeline[0] == "arm_place_machining":
             if self.position_info.stuff_num == 0:
-                # msg = MoveGoal()
-                # msg.x_abs, msg.y_abs, msg.angle_abs = config.get("machining_pose")
-                # self.pub1_.publish(msg)
+                msg = MoveGoal()
+                msg.x_abs, msg.y_abs, msg.angle_abs = config.get("machining_pose")
+                self.pub1_.publish(msg)
                 print(self.task_pipeline)
                 self.task_pipeline.pop(0)
                 self.task_index = self.task_index - 3
@@ -301,6 +303,7 @@ class Policy(Node):
                 if self.task_index < 3:
                     self.stagine_poses[color - 1] = [self.position_info.x_abs, self.position_info.y_abs, self.position_info.angle_abs]
                     msg.act_id = ARM_PLACE_GROUND
+                    self.task_index = self.task_index + 3
                 else:
                     msg.act_id = ARM_PLACE_STUFF
                 for i in range(10):
