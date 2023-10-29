@@ -64,21 +64,6 @@ class Policy(Node):
             "arm_place_material1",
             "arm_place_material2",
             "arm_place_material3",
-            "arm_grab_staging",
-            "arm_grab_staging1",
-            "arm_grab_staging2",
-            "arm_grab_staging3",
-            "arm_place_machining",
-            "arm_place_machining1",
-            "arm_place_machining2",
-            "arm_place_machining3",
-            "arm_grab_machining1",
-            "arm_grab_machining2",
-            "arm_grab_machining3",
-            "arm_place_material",
-            "arm_place_material1",
-            "arm_place_material2",
-            "arm_place_material3",
             "come_to_end"
         ]
         self.task_sequence = [1, 2, 3, 3, 2, 1]

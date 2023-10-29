@@ -17,9 +17,9 @@ machining_red_pose: [1948.0, 884.0, 90.0]
 machining_green_pose: [1948.0, 1047.0, 90.0]
 machining_blue_pose: [1946.0, 1185.0, 90.0]
 staging_pose: [1100.0, 1700.0, 180.0]
-staging_red_pose: [1245.0, 1763.0, 180.0]
-staging_green_pose: [1105.0, 1770.0, 180.0]
-staging_blue_pose: [945.0, 1770.0, 180.0]
+staging_red_pose: [1245.0, 1763.0, 180.0] // left
+staging_green_pose: [1105.0, 1770.0, 180.0] // center
+staging_blue_pose: [945.0, 1770.0, 180.0] // right
 end_pose: [50.0, 0.0, 180.0]
 
 # start_pose: [0.0, 0.0, 0.0]
