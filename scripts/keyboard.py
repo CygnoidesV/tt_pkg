@@ -15,6 +15,19 @@ ARM_PLACE_GROUND = 0x05
 ARM_GRAB_GROUND = 0x06
 ARM_PLACE_STUFF = 0x07
 
+ARM_GRAB_GROUND1 = 0x09
+ARM_GRAB_GROUND2 = 0x0A
+ARM_GRAB_GROUND3 = 0x0B
+ARM_PLACE_GROUND1 = 0x0C
+ARM_PLACE_GROUND2 = 0x0D
+ARM_PLACE_GROUND3 = 0x0E
+ARM_GRAB_GROUND4 = 0x0F
+ARM_GRAB_GROUND5 = 0x10
+ARM_GRAB_GROUND6 = 0x11
+ARM_PLACE_MATERIAL1 = 0x12
+ARM_PLACE_MATERIAL2 = 0x13
+ARM_PLACE_MATERIAL3 = 0x14
+ARM_TO_TARGET = 0x15
 
 def get_time_diff(stamp1, stamp2):
     # 获取时间戳并将其转换为秒
@@ -181,22 +194,22 @@ class Keyboard(Node):
                 msg.vw = self.position_info.angle_abs - 90
             if key == ord('r'):
                 msg = ArmCmd()
-                msg.act_id = ARM_RST
+                msg.act_id = ARM_TO_TARGET
                 for i in range(10):
                     self.pub3_.publish(msg)
             if key == ord('t'):
                 msg = ArmCmd()
-                msg.act_id = ARM_TO_CODE
+                msg.act_id = ARM_GRAB_GROUND1
                 for i in range(10):
                     self.pub3_.publish(msg)
             if key == ord('y'):
                 msg = ArmCmd()
-                msg.act_id = ARM_TO_STUFF
+                msg.act_id = ARM_PLACE_GROUND1
                 for i in range(10):
                     self.pub3_.publish(msg)
             if key == ord('u'):
                 msg = ArmCmd()
-                msg.act_id = ARM_GRAB_MATERIAL
+                msg.act_id = ARM_PLACE_MATERIAL1
                 for i in range(10):
                     self.pub3_.publish(msg)
             if key == ord('i'):
